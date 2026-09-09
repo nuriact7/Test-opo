@@ -408,14 +408,7 @@
 
   <!-- ============ PANTALLA 1: CONFIGURACIÓN ============ -->
   <section id="pantalla-config" class="card stack">
-    <div id="banner-resume" class="hidden" style="background:rgba(255,193,7,0.12);border:1px solid rgba(255,193,7,0.4);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;">
-      <strong style="font-size:0.9rem;">⏸ Tienes un test sin terminar</strong>
-      <span id="banner-resume-detalle" style="font-size:0.82rem;color:var(--text-dim);"></span>
-      <div class="row" style="gap:8px;">
-        <button class="btn btn-sm" id="btn-resume-continuar" style="flex:1;">▶ Continuar</button>
-        <button class="btn btn-ghost btn-sm" id="btn-resume-descartar" style="flex:1;">Descartar</button>
-      </div>
-    </div>
+    <div id="banner-resume" class="hidden" style="background:rgba(255,193,7,0.12);border:1px solid rgba(255,193,7,0.4);border-radius:10px;padding:12px 14px;flex-direction:column;gap:8px;"></div>
     <div class="stack" style="gap:10px;">
       <div class="row between">
         <strong style="font-size:0.95rem;">Elige temática(s)</strong>
@@ -425,6 +418,7 @@
         </div>
       </div>
       <div id="temas-grid" class="temas-grid"></div>
+      <div id="plan-accesos-rapidos" class="row" style="gap:6px;flex-wrap:wrap;margin-top:4px;"></div>
     </div>
 
     <div class="stack" style="gap:10px;">
@@ -635,7 +629,7 @@
   var STATS_KEY = 'oposicion_cartagena_stats_v1';
   var HISTORY_KEY = 'oposicion_cartagena_historial_v1';
   var FAVORITOS_KEY = 'oposicion_cartagena_favoritos_v1';
-  var SESION_KEY = 'oposicion_cartagena_sesion_en_curso_v1';
+  var SESIONES_KEY = 'oposicion_cartagena_sesiones_en_curso_v1';
 
   function cargarJSON(key, fallback){
     var raw = storage.get(key);
@@ -980,9 +974,24 @@
     cronoInterval = null;
   }
 
-  // ---------- Continuar test (permite cerrar la app a mitad y retomar sin perder ni repetir preguntas) ----------
+  // ---------- Continuar test (guarda una tanda pendiente por cada combinación de tema/modo, para poder alternar entre bloques sin perder ninguna) ----------
+  var sesionActualClave = null;
+  var sesionActualEtiqueta = '';
+
+  function claveSesionActual(){
+    var temasElegidos = Object.keys(temasSeleccionados).filter(function(t){ return temasSeleccionados[t]; }).sort();
+    return modoActual + '::' + temasElegidos.join('|');
+  }
+  function etiquetaSesionActual(){
+    var temasElegidos = Object.keys(temasSeleccionados).filter(function(t){ return temasSeleccionados[t]; });
+    var nombreModo = modoActual === 'falladas' ? 'Repaso de falladas' : modoActual === 'revisar' ? 'Dudosas' : modoActual === 'favoritas' ? 'Favoritas' : 'Test normal';
+    var nombreTemas = temasElegidos.length === 1 ? temasElegidos[0] : (temasElegidos.length ? (temasElegidos.length + ' temas seleccionados') : 'sin tema');
+    return nombreModo + ' · ' + nombreTemas;
+  }
   function guardarSesionQuiz(){
-    var datos = {
+    if(!sesionActualClave) return;
+    var sesiones = cargarJSON(SESIONES_KEY, {});
+    sesiones[sesionActualClave] = {
       ids: quizPreguntas.map(function(q){ return q.id; }),
       indice: quizIndice,
       correctas: quizCorrectas,
@@ -991,24 +1000,33 @@
       cronoActivo: cronoActivo,
       cronoSegundos: cronoSegundos,
       modo: modoActual,
+      etiqueta: sesionActualEtiqueta,
       ts: Date.now()
     };
-    guardarJSON(SESION_KEY, datos);
+    guardarJSON(SESIONES_KEY, sesiones);
   }
-  function borrarSesionQuiz(){
-    try { window.localStorage.removeItem(SESION_KEY); } catch(e){}
+  function borrarSesionQuiz(clave){
+    var sesiones = cargarJSON(SESIONES_KEY, {});
+    delete sesiones[clave || sesionActualClave];
+    guardarJSON(SESIONES_KEY, sesiones);
   }
-  function cargarSesionGuardada(){
-    var datos = cargarJSON(SESION_KEY, null);
-    if(!datos || !datos.ids || !datos.ids.length) return null;
-    if(datos.indice >= datos.ids.length) return null; // ya estaba terminado
-    // Si el banco de preguntas ha cambiado (ids que ya no existen), no ofrecemos reanudar.
-    for(var i = 0; i < datos.ids.length; i++){
-      if(!QUESTIONS_BY_ID[datos.ids[i]]) return null;
-    }
-    return datos;
+  function listarSesionesGuardadas(){
+    var sesiones = cargarJSON(SESIONES_KEY, {});
+    var resultado = [];
+    Object.keys(sesiones).forEach(function(clave){
+      var datos = sesiones[clave];
+      if(!datos || !datos.ids || !datos.ids.length) return;
+      if(datos.indice >= datos.ids.length) return; // ya estaba terminada
+      var validas = datos.ids.every(function(id){ return !!QUESTIONS_BY_ID[id]; });
+      if(!validas) return; // el banco cambió, no ofrecemos reanudar esta
+      resultado.push({ clave: clave, datos: datos });
+    });
+    resultado.sort(function(a, b){ return (b.datos.ts || 0) - (a.datos.ts || 0); });
+    return resultado;
   }
-  function reanudarSesionQuiz(datos){
+  function reanudarSesionQuiz(clave, datos){
+    sesionActualClave = clave;
+    sesionActualEtiqueta = datos.etiqueta || '';
     quizPreguntas = datos.ids.map(function(id){ return QUESTIONS_BY_ID[id]; });
     quizIndice = datos.indice;
     quizCorrectas = datos.correctas || 0;
@@ -1022,27 +1040,41 @@
       detenerCrono();
       document.getElementById('quiz-cronometro').classList.add('hidden');
     }
-    document.getElementById('banner-resume').classList.add('hidden');
     mostrarPantalla('quiz');
     renderPregunta();
   }
   function comprobarSesionGuardada(){
-    var datos = cargarSesionGuardada();
+    var lista = listarSesionesGuardadas();
     var banner = document.getElementById('banner-resume');
-    if(!datos){
+    if(!lista.length){
       banner.classList.add('hidden');
+      banner.innerHTML = '';
       return;
     }
-    document.getElementById('banner-resume-detalle').textContent =
-      'Ibas por la pregunta ' + (datos.indice + 1) + ' de ' + datos.ids.length + '. Puedes seguir justo donde lo dejaste.';
     banner.classList.remove('hidden');
-    document.getElementById('btn-resume-continuar').onclick = function(){
-      reanudarSesionQuiz(datos);
-    };
-    document.getElementById('btn-resume-descartar').onclick = function(){
-      borrarSesionQuiz();
-      banner.classList.add('hidden');
-    };
+    var html = '<strong style="font-size:0.9rem;">⏸ Tienes ' + lista.length + ' test' + (lista.length > 1 ? 's' : '') + ' sin terminar</strong>';
+    lista.forEach(function(item){
+      html += '<div class="row between" style="margin-top:8px;gap:8px;flex-wrap:wrap;">' +
+        '<span style="font-size:0.8rem;flex:1 1 auto;">' + escapeHtml(item.datos.etiqueta || 'Test') + ' — pregunta ' + (item.datos.indice + 1) + ' de ' + item.datos.ids.length + '</span>' +
+        '<span class="row" style="gap:6px;">' +
+          '<button class="btn btn-sm" data-resume="' + escapeHtml(item.clave) + '">▶ Continuar</button>' +
+          '<button class="btn btn-ghost btn-sm" data-discard="' + escapeHtml(item.clave) + '">Descartar</button>' +
+        '</span></div>';
+    });
+    banner.innerHTML = html;
+    Array.prototype.forEach.call(banner.querySelectorAll('[data-resume]'), function(btn){
+      btn.addEventListener('click', function(){
+        var clave = this.dataset.resume;
+        var sesiones = cargarJSON(SESIONES_KEY, {});
+        if(sesiones[clave]) reanudarSesionQuiz(clave, sesiones[clave]);
+      });
+    });
+    Array.prototype.forEach.call(banner.querySelectorAll('[data-discard]'), function(btn){
+      btn.addEventListener('click', function(){
+        borrarSesionQuiz(this.dataset.discard);
+        comprobarSesionGuardada();
+      });
+    });
   }
 
   function barajar(arr){
@@ -1061,6 +1093,8 @@
     quizFalladas = [];
     quizRacha = 0;
     respuestaBloqueada = false;
+    sesionActualClave = claveSesionActual();
+    sesionActualEtiqueta = etiquetaSesionActual();
     cronoActivo = document.getElementById('chk-cronometro').checked;
     if(cronoActivo){
       iniciarCrono();
@@ -1408,6 +1442,38 @@
       historialDB = historialDB.slice(0, 30);
     }
 
+    if(datos.especifica){
+      var espLocal = cargarEspecifica();
+      Object.keys(datos.especifica).forEach(function(k){
+        var incoming = datos.especifica[k];
+        if(!incoming) return;
+        espLocal[k] = espLocal[k] || {};
+        if(incoming.v1) espLocal[k].v1 = true;
+        if(incoming.v2) espLocal[k].v2 = true;
+      });
+      guardarEspecifica(espLocal);
+    }
+
+    if(datos.fase3){
+      var f3Local = cargarFase3();
+      Object.keys(datos.fase3).forEach(function(k){ if(datos.fase3[k]) f3Local[k] = true; });
+      guardarFase3(f3Local);
+    }
+
+    if(datos.diario){
+      var diarioLocal = cargarJSON(DIARIO_KEY, {});
+      Object.keys(datos.diario).forEach(function(f){ diarioLocal[f] = Math.max(diarioLocal[f] || 0, datos.diario[f] || 0); });
+      guardarJSON(DIARIO_KEY, diarioLocal);
+    }
+
+    if(datos.planInicio){
+      var actualInicio = null;
+      try { actualInicio = window.localStorage.getItem(PLAN_INICIO_KEY); } catch(e){}
+      if(!actualInicio || datos.planInicio < actualInicio){
+        try { window.localStorage.setItem(PLAN_INICIO_KEY, datos.planInicio); } catch(e){}
+      }
+    }
+
     return {statsNuevas: statsNuevas, favoritasNuevas: favoritasNuevas, historialNuevo: historialNuevo};
   }
 
@@ -1486,7 +1552,15 @@
   // CDN bloqueado, etc.) esta app sigue funcionando exactamente igual, en modo local.
   window.__quizSync = {
     getState: function(){
-      return { falladas: falladasDB, stats: statsDB, favoritos: favoritosDB, historial: historialDB };
+      var planInicio = null;
+      try { planInicio = window.localStorage.getItem(PLAN_INICIO_KEY); } catch(e){}
+      return {
+        falladas: falladasDB, stats: statsDB, favoritos: favoritosDB, historial: historialDB,
+        especifica: cargarJSON(ESPECIFICA_KEY, {}),
+        fase3: cargarJSON(FASE3_KEY, {}),
+        diario: cargarJSON(DIARIO_KEY, {}),
+        planInicio: planInicio
+      };
     },
     // Sustituye el estado local por uno recibido de la nube (usado cuando llega una
     // actualización desde OTRO dispositivo). No es aditivo: es la foto más reciente.
@@ -1499,8 +1573,13 @@
       guardarStats();
       guardarFavoritos();
       guardarHistorial();
+      guardarEspecifica(nuevo.especifica || {});
+      guardarFase3(nuevo.fase3 || {});
+      guardarJSON(DIARIO_KEY, nuevo.diario || {});
+      if(nuevo.planInicio){ try { window.localStorage.setItem(PLAN_INICIO_KEY, nuevo.planInicio); } catch(e){} }
       actualizarResumenSeleccion();
       if(panelProgresoAbierto) renderProgreso();
+      if(!document.getElementById('pantalla-plan').classList.contains('hidden')) renderPlan();
     },
     // Fusiona (de forma aditiva, sin duplicar ni perder nada) datos recibidos de la nube
     // con lo que ya hay en este dispositivo. Se usa solo la primera vez que se vincula
@@ -1513,6 +1592,7 @@
       guardarHistorial();
       actualizarResumenSeleccion();
       if(panelProgresoAbierto) renderProgreso();
+      if(!document.getElementById('pantalla-plan').classList.contains('hidden')) renderPlan();
       return resumen;
     },
     // El script de sincronización asigna aquí una función; se llama cada vez que hay
@@ -1585,6 +1665,25 @@
     { nombre: 'Ley 40/2015 (Régimen Jurídico Sector Público)', match: function(t){ return t === 'Ley 40/2015 · Régimen Jurídico del Sector Público'; }, pequeno: true },
     { nombre: 'RD 485/1997 (Señalización Seg. y Salud)', match: function(t){ return t === 'Real Decreto 485/1997 · Señalización de Seguridad y Salud en el Trabajo'; }, pequeno: true }
   ];
+
+  function seleccionarBloque(bloque){
+    temas.forEach(function(t){ temasSeleccionados[t] = bloque.match(t); });
+    renderTemas();
+    actualizarResumenSeleccion();
+  }
+  function renderAccesosRapidos(){
+    var cont = document.getElementById('plan-accesos-rapidos');
+    if(!cont) return;
+    cont.innerHTML = '';
+    var bloqueCE = BLOQUES_GENERAL.filter(function(b){ return b.nombre.indexOf('Constitución') === 0; })[0];
+    if(!bloqueCE) return;
+    cont.innerHTML = '<span style="font-size:0.75rem;color:var(--text-dim);width:100%;">Acceso rápido:</span>';
+    var btn = document.createElement('button');
+    btn.className = 'btn btn-ghost btn-sm';
+    btn.textContent = bloqueCE.nombre;
+    btn.addEventListener('click', function(){ seleccionarBloque(bloqueCE); });
+    cont.appendChild(btn);
+  }
 
   function progresoBloque(bloque){
     var preguntas = ALL_QUESTIONS.filter(function(q){ return bloque.match(q.tema); });
@@ -1752,19 +1851,23 @@
     // --- "Qué te toca ahora" ---
     var hoyEl = document.getElementById('plan-hoy');
     var sugerencia = null;
-    var ordenPorTamano = BLOQUES_GENERAL.map(function(b, i){ return {b: b, p: progresos[i]}; })
-      .filter(function(x){ return !x.b.pequeno; })
-      .sort(function(a, b2){ return b2.p.total - a.p.total; });
-    for(var i = 0; i < ordenPorTamano.length; i++){
-      var x = ordenPorTamano[i];
-      if(x.p.vistas < x.p.total){
-        sugerencia = 'Toca <b>' + escapeHtml(x.b.nombre) + '</b> (Fase 1): llevas ' + x.p.vistas + ' de ' + x.p.total + '. Marca solo ese tema y pide "todas".';
-        break;
-      }
+    var candidatosFase1 = BLOQUES_GENERAL.map(function(b, i){ return {b: b, p: progresos[i]}; })
+      .filter(function(x){ return !x.b.pequeno && x.p.vistas < x.p.total; })
+      .map(function(x){
+        var objetivoHoy = objetivoAcumulado(x.p.total, semanaInfo.inicio, semanaInfo.dias);
+        return { b: x.b, p: x.p, atraso: objetivoHoy - x.p.vistas };
+      })
+      .sort(function(a, b2){ return b2.atraso - a.atraso; }); // el más atrasado respecto a su propio objetivo, primero
+    if(candidatosFase1.length){
+      var x = candidatosFase1[0];
+      sugerencia = 'Toca <b>' + escapeHtml(x.b.nombre) + '</b> (Fase 1): llevas ' + x.p.vistas + ' de ' + x.p.total + '. Marca solo ese tema y pide "todas".';
     }
     if(!sugerencia){
-      for(var j = 0; j < ordenPorTamano.length; j++){
-        var y = ordenPorTamano[j];
+      var todosGrandes = BLOQUES_GENERAL.map(function(b, i){ return {b: b, p: progresos[i]}; })
+        .filter(function(x){ return !x.b.pequeno; })
+        .sort(function(a, b2){ return b2.p.falladasVivas - a.p.falladasVivas; });
+      for(var j = 0; j < todosGrandes.length; j++){
+        var y = todosGrandes[j];
         if(y.p.falladasVivas > 0){
           sugerencia = 'Toca <b>' + escapeHtml(y.b.nombre) + '</b> (Fase 2 · Falladas): te quedan ' + y.p.falladasVivas + ' preguntas falladas vivas. Usa el modo "⚠️ Falladas" con ese tema marcado.';
           break;
@@ -1908,6 +2011,7 @@
   // ---------- Inicio ----------
   renderTemas();
   actualizarResumenSeleccion();
+  renderAccesosRapidos();
   comprobarSesionGuardada();
   document.getElementById('footer-total-info').textContent = ALL_QUESTIONS.length + ' preguntas en el banco total';
 
