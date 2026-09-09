@@ -13,6 +13,10 @@
   .plan-badge{border-radius:20px;padding:5px 12px;font-size:0.8rem;font-weight:600;white-space:nowrap;}
   .plan-badge.ok{background:rgba(34,197,94,0.18);color:#4ade80;}
   .plan-badge.warn{background:rgba(251,191,36,0.18);color:#fbbf24;}
+  .plan-badge.racha{background:linear-gradient(90deg, rgba(251,146,60,0.25), rgba(239,68,68,0.2));color:#fb923c;}
+  .plan-mini-stats{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:0.78rem;color:var(--text-dim);}
+  .plan-mini-stats b{color:var(--text);}
+  .plan-card-celebra{border:1px solid rgba(61,220,151,0.5);background:linear-gradient(135deg, rgba(61,220,151,0.10), rgba(255,255,255,0.03));}
   .plan-progreso-texto{font-size:0.85rem;margin-top:10px;}
   .plan-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 14px;}
   .plan-card-header{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
@@ -26,7 +30,16 @@
   .plan-hoy-card{background:linear-gradient(135deg, rgba(99,102,241,0.20), rgba(99,102,241,0.06));border:1px solid rgba(99,102,241,0.4);border-radius:14px;padding:16px;}
   .plan-hoy-titulo{font-size:0.78rem;text-transform:uppercase;letter-spacing:0.04em;color:#a5b4fc;font-weight:700;}
   .plan-hoy-texto{font-size:0.95rem;margin-top:6px;line-height:1.4;}
-</style>
+  .plan-calendario{display:flex;gap:6px;overflow-x:auto;padding:10px 2px 4px;margin-top:4px;}
+  .plan-dia-chip{flex:none;width:42px;height:54px;border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:0.68rem;gap:2px;font-weight:600;}
+  .plan-dia-chip .num{font-size:0.72rem;opacity:0.85;}
+  .plan-dia-chip .icono{font-size:1.05rem;}
+  .plan-dia-chip.rojo{background:var(--bad-bg);color:var(--bad);}
+  .plan-dia-chip.amarillo{background:rgba(245,185,66,0.16);color:var(--warn);}
+  .plan-dia-chip.verde{background:var(--ok-bg);color:var(--ok);}
+  .plan-dia-chip.estrella{background:linear-gradient(180deg, rgba(251,191,36,0.22), var(--ok-bg));color:var(--ok);}
+  .plan-dia-chip.futuro{background:rgba(255,255,255,0.04);color:var(--text-dim);}
+  .plan-dia-chip.hoy{outline:2px solid var(--accent);outline-offset:1px;}
   :root{
     --bg:#0f1420;
     --panel:#161d2e;
@@ -687,6 +700,8 @@
     statsDB[id].intentos += 1;
     if(acierto) statsDB[id].aciertos += 1;
     guardarStats();
+
+    registrarPreguntaHoy();
 
     avisarCambioLocal();
   }
@@ -1508,22 +1523,54 @@
   // ---------- Mi plan de estudio ----------
   var ESPECIFICA_KEY = 'oposicion_cartagena_especifica_v1';
   var FASE3_KEY = 'oposicion_cartagena_fase3_v1';
-  var PLAN_INICIO_KEY = 'oposicion_cartagena_plan_inicio_v1';
+  var PLAN_INICIO_KEY = 'oposicion_cartagena_plan_inicio_fecha_v1';
+  var DIARIO_KEY = 'oposicion_cartagena_progreso_diario_v1';
   var NUM_TEMAS_ESPECIFICA = 48;
-  var DIAS_OBJETIVO_FASE1 = 21; // orientativo: días totales que te propones para completar la Fase 1 (3 semanas)
+  var DIAS_OBJETIVO_FASE1 = 21; // orientativo: días totales que te propones para completar la Fase 1
   var DIAS_POR_PERIODO = 3.5; // agrupamos el ritmo en bloques de 3-4 días
 
-  function obtenerSemanaPlan(){
-    var inicio = null;
-    try { inicio = window.localStorage.getItem(PLAN_INICIO_KEY); } catch(e){}
-    if(!inicio){
-      inicio = String(Date.now());
-      try { window.localStorage.setItem(PLAN_INICIO_KEY, inicio); } catch(e){}
+  function fechaISO(d){
+    var y = d.getFullYear(), m = ('0' + (d.getMonth() + 1)).slice(-2), day = ('0' + d.getDate()).slice(-2);
+    return y + '-' + m + '-' + day;
+  }
+  function sumarDias(fechaStr, n){
+    var partes = fechaStr.split('-').map(Number);
+    var d = new Date(partes[0], partes[1] - 1, partes[2]);
+    d.setDate(d.getDate() + n);
+    return fechaISO(d);
+  }
+  function diferenciaDias(fechaA, fechaB){
+    var pa = fechaA.split('-').map(Number), pb = fechaB.split('-').map(Number);
+    var da = new Date(pa[0], pa[1] - 1, pa[2]);
+    var db = new Date(pb[0], pb[1] - 1, pb[2]);
+    return Math.round((db - da) / 86400000);
+  }
+  function registrarPreguntaHoy(){
+    var d = cargarJSON(DIARIO_KEY, {});
+    var hoy = fechaISO(new Date());
+    d[hoy] = (d[hoy] || 0) + 1;
+    guardarJSON(DIARIO_KEY, d);
+  }
+  function obtenerFechaInicioPlan(){
+    var f = null;
+    try { f = window.localStorage.getItem(PLAN_INICIO_KEY); } catch(e){}
+    if(!f){
+      f = sumarDias(fechaISO(new Date()), 1); // por defecto, empieza mañana
+      try { window.localStorage.setItem(PLAN_INICIO_KEY, f); } catch(e){}
     }
-    var dias = Math.floor((Date.now() - parseInt(inicio, 10)) / 86400000);
-    var periodo = Math.floor(dias / DIAS_POR_PERIODO) + 1;
+    return f;
+  }
+  function fijarFechaInicioPlan(fechaStr){
+    try { window.localStorage.setItem(PLAN_INICIO_KEY, fechaStr); } catch(e){}
+  }
+  function obtenerSemanaPlan(){
+    var inicio = obtenerFechaInicioPlan();
+    var hoy = fechaISO(new Date());
+    var dias = diferenciaDias(inicio, hoy); // negativo si el plan aún no ha empezado
+    var diasParaPeriodo = Math.max(dias, 0);
+    var periodo = Math.floor(diasParaPeriodo / DIAS_POR_PERIODO) + 1;
     var totalPeriodos = Math.ceil(DIAS_OBJETIVO_FASE1 / DIAS_POR_PERIODO);
-    return { dias: dias, periodo: periodo, totalPeriodos: totalPeriodos };
+    return { dias: dias, periodo: periodo, totalPeriodos: totalPeriodos, inicio: inicio, hoy: hoy };
   }
 
   var BLOQUES_GENERAL = [
@@ -1550,9 +1597,96 @@
     return { total: total, vistas: vistas, falladasVivas: falladasVivas };
   }
 
+  function pesoDia(fechaStr){
+    // Pesos orientativos de disponibilidad real, según lo que ya sabemos de tu calendario.
+    if(fechaStr === '2026-10-05') return 0.4;  // club de lectura por la tarde
+    if(fechaStr === '2026-10-07') return 0.4;  // clase de oposiciones
+    if(fechaStr === '2026-10-16' || fechaStr === '2026-10-17') return 0.1; // boda
+    var partes = fechaStr.split('-').map(Number);
+    var d = new Date(partes[0], partes[1] - 1, partes[2]);
+    var diaSemana = d.getDay(); // 0 domingo ... 6 sábado
+    var esFinde = (diaSemana === 0 || diaSemana === 6);
+    if(fechaStr < '2026-09-15') return 1.3; // aún sin incorporarte al trabajo: días casi completos
+    return esFinde ? 1.3 : 0.8; // ya trabajando: findes con más margen que entre semana
+  }
+
+  function construirPesos(inicio, numDias){
+    var pesos = [];
+    for(var i = 0; i < numDias; i++){ pesos.push(pesoDia(sumarDias(inicio, i))); }
+    return pesos;
+  }
+
   function barraHtml(pct, color){
     return '<div style="background:rgba(255,255,255,0.08);border-radius:6px;height:8px;overflow:hidden;">' +
       '<div style="background:' + color + ';height:100%;width:' + pct + '%;"></div></div>';
+  }
+
+  function renderCalendarioDias(semanaInfo, totalGeneralGrande){
+    var diario = cargarJSON(DIARIO_KEY, {});
+    var numDias = Math.max(DIAS_OBJETIVO_FASE1, semanaInfo.dias + 3);
+    var pesos = construirPesos(semanaInfo.inicio, numDias);
+    var sumaPesos = pesos.reduce(function(a, b){ return a + b; }, 0);
+    var html = '<div class="plan-calendario">';
+    for(var i = 0; i < numDias; i++){
+      var fecha = sumarDias(semanaInfo.inicio, i);
+      var actual = diario[fecha] || 0;
+      var objetivoDiario = Math.max(1, Math.round(totalGeneralGrande * pesos[i] / sumaPesos));
+      var clase, icono, contenido;
+      if(i > semanaInfo.dias){
+        clase = 'futuro'; icono = '·'; contenido = '';
+      } else if(i === semanaInfo.dias){
+        if(actual >= objetivoDiario * 1.3){ clase = 'estrella'; icono = '⭐'; }
+        else if(actual >= objetivoDiario){ clase = 'verde'; icono = '✅'; }
+        else { clase = 'futuro hoy'; icono = '⏳'; }
+        contenido = actual + '/' + objetivoDiario;
+      } else {
+        if(actual >= objetivoDiario * 1.3){ clase = 'estrella'; icono = '⭐'; }
+        else if(actual >= objetivoDiario){ clase = 'verde'; icono = '✅'; }
+        else if(actual >= objetivoDiario * 0.7){ clase = 'amarillo'; icono = '🟡'; }
+        else { clase = 'rojo'; icono = '❌'; }
+        contenido = actual + '/' + objetivoDiario;
+      }
+      html += '<div class="plan-dia-chip ' + clase + (i === semanaInfo.dias ? ' hoy' : '') + '" title="' + fecha + ': ' + actual + ' de ' + objetivoDiario + '">' +
+        '<span class="num">' + (i + 1) + '</span><span class="icono">' + icono + '</span><span>' + contenido + '</span></div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function objetivoAcumulado(totalBloque, inicio, hastaIndiceInclusive){
+    var numDias = Math.max(DIAS_OBJETIVO_FASE1, hastaIndiceInclusive + 3);
+    var pesos = construirPesos(inicio, numDias);
+    var sumaPesos = pesos.reduce(function(a, b){ return a + b; }, 0);
+    var acumPeso = 0;
+    for(var i = 0; i <= hastaIndiceInclusive && i < pesos.length; i++){ acumPeso += pesos[i]; }
+    return Math.round(totalBloque * acumPeso / sumaPesos);
+  }
+
+  function calcularRachas(semanaInfo, totalGeneralGrande){
+    var diario = cargarJSON(DIARIO_KEY, {});
+    var diasCompletos = semanaInfo.dias; // días 0..dias-1 ya han terminado; el día "dias" es hoy, aún en curso
+    if(diasCompletos <= 0) return { actual: 0, mejor: 0 };
+    var numDias = Math.max(diasCompletos, DIAS_OBJETIVO_FASE1);
+    var pesos = construirPesos(semanaInfo.inicio, numDias);
+    var sumaPesos = pesos.reduce(function(a, b){ return a + b; }, 0);
+    var rachaTemp = 0, mejorRacha = 0;
+    for(var i = 0; i < diasCompletos; i++){
+      var fecha = sumarDias(semanaInfo.inicio, i);
+      var objetivo = Math.max(1, Math.round(totalGeneralGrande * pesos[i] / sumaPesos));
+      var actual = diario[fecha] || 0;
+      if(actual >= objetivo){ rachaTemp++; mejorRacha = Math.max(mejorRacha, rachaTemp); }
+      else { rachaTemp = 0; }
+    }
+    return { actual: rachaTemp, mejor: mejorRacha };
+  }
+
+  function totalPreguntasDelPlan(inicio, hoy){
+    var diario = cargarJSON(DIARIO_KEY, {});
+    var total = 0;
+    Object.keys(diario).forEach(function(f){
+      if(f >= inicio && f <= hoy) total += diario[f];
+    });
+    return total;
   }
 
   function cargarEspecifica(){ return cargarJSON(ESPECIFICA_KEY, {}); }
@@ -1566,21 +1700,53 @@
     var fase3Data = cargarFase3();
     var semanaInfo = obtenerSemanaPlan();
 
-    // --- Cabecera de ritmo: bloque de 3-4 días en curso ---
+    // --- Cabecera de ritmo ---
     var ritmoEl = document.getElementById('plan-ritmo');
     var totalGeneralGrande = BLOQUES_GENERAL.filter(function(b){ return !b.pequeno; }).reduce(function(s, b){ return s + progresoBloque(b).total; }, 0);
     var vistasGeneralGrande = BLOQUES_GENERAL.filter(function(b){ return !b.pequeno; }).reduce(function(s, b){ return s + progresoBloque(b).vistas; }, 0);
-    var objetivoAcumHastaHoy = Math.round(Math.min(1, semanaInfo.periodo / semanaInfo.totalPeriodos) * totalGeneralGrande);
-    var vasAdelantado = vistasGeneralGrande >= objetivoAcumHastaHoy;
     ritmoEl.className = 'plan-ritmo-card';
-    ritmoEl.innerHTML =
-      '<div class="plan-ritmo-top">' +
-        '<div><div class="plan-dia-num">Día ' + (semanaInfo.dias + 1) + '</div><div class="plan-dia-label">de tu plan</div></div>' +
-        '<span class="plan-bloque-chip">📦 Bloque ' + semanaInfo.periodo + ' de ' + semanaInfo.totalPeriodos + ' <span style="opacity:0.7;">(3-4 días c/u)</span></span>' +
-        '<span class="plan-badge ' + (vasAdelantado ? 'ok' : 'warn') + '">' + (vasAdelantado ? '✅ Al día' : '⏳ Un poco atrasada') + '</span>' +
-      '</div>' +
-      '<div class="plan-progreso-texto">Llevas <b>' + vistasGeneralGrande + '</b> / ' + totalGeneralGrande + ' preguntas de los bloques grandes · objetivo a estas alturas: <b>' + objetivoAcumHastaHoy + '</b> (meta: Fase 1 en ' + DIAS_OBJETIVO_FASE1 + ' días)</div>' +
-      barraHtml(totalGeneralGrande ? Math.round(100 * vistasGeneralGrande / totalGeneralGrande) : 0, 'var(--accent)');
+
+    if(semanaInfo.dias < 0){
+      ritmoEl.innerHTML =
+        '<div class="plan-ritmo-top">' +
+          '<div><div class="plan-dia-num">🚀</div><div class="plan-dia-label">tu plan empieza el ' + semanaInfo.inicio + '</div></div>' +
+          '<span class="plan-bloque-chip">Faltan ' + (-semanaInfo.dias) + ' día(s)</span>' +
+        '</div>' +
+        '<div class="plan-progreso-texto">Puedes ir haciendo tests ya si quieres (se guardará todo), pero el conteo de días y objetivos empezará ese día. <button class="btn btn-ghost btn-sm" id="btn-plan-fecha" style="margin-top:8px;">Cambiar fecha de inicio</button></div>';
+    } else {
+      var objetivoAcumHastaHoy = objetivoAcumulado(totalGeneralGrande, semanaInfo.inicio, semanaInfo.dias);
+      var vasAdelantado = vistasGeneralGrande >= objetivoAcumHastaHoy;
+      var rachas = calcularRachas(semanaInfo, totalGeneralGrande);
+      var totalPlan = totalPreguntasDelPlan(semanaInfo.inicio, semanaInfo.hoy);
+      ritmoEl.innerHTML =
+        '<div class="plan-ritmo-top">' +
+          '<div><div class="plan-dia-num">Día ' + (semanaInfo.dias + 1) + '</div><div class="plan-dia-label">de tu plan</div></div>' +
+          '<span class="plan-bloque-chip">📦 Bloque ' + semanaInfo.periodo + ' de ' + semanaInfo.totalPeriodos + ' <span style="opacity:0.7;">(3-4 días c/u)</span></span>' +
+          '<span class="plan-badge ' + (vasAdelantado ? 'ok' : 'warn') + '">' + (vasAdelantado ? '✅ Al día' : '⏳ Un poco atrasada') + '</span>' +
+          (rachas.actual > 0 ? '<span class="plan-badge racha">🔥 Racha: ' + rachas.actual + ' día' + (rachas.actual === 1 ? '' : 's') + '</span>' : '') +
+        '</div>' +
+        '<div class="plan-progreso-texto">Llevas <b>' + vistasGeneralGrande + '</b> / ' + totalGeneralGrande + ' preguntas de los bloques grandes · objetivo a estas alturas: <b>' + objetivoAcumHastaHoy + '</b> (meta: Fase 1 en ' + DIAS_OBJETIVO_FASE1 + ' días)</div>' +
+        barraHtml(totalGeneralGrande ? Math.round(100 * vistasGeneralGrande / totalGeneralGrande) : 0, 'var(--accent)') +
+        '<div class="plan-mini-stats">' +
+          '<span>🧮 Preguntas respondidas en el plan: <b>' + totalPlan + '</b></span>' +
+          (rachas.mejor > rachas.actual ? '<span>🏆 Mejor racha: <b>' + rachas.mejor + '</b> días</span>' : '') +
+        '</div>' +
+        '<button class="btn btn-ghost btn-sm" id="btn-plan-fecha" style="margin-top:10px;">Cambiar fecha de inicio (' + semanaInfo.inicio + ')</button>' +
+        renderCalendarioDias(semanaInfo, totalGeneralGrande);
+    }
+    var btnFecha = document.getElementById('btn-plan-fecha');
+    if(btnFecha){
+      btnFecha.addEventListener('click', function(){
+        var actual = obtenerFechaInicioPlan();
+        var nueva = prompt('Fecha de inicio de tu plan (AAAA-MM-DD):', actual);
+        if(nueva && /^\d{4}-\d{2}-\d{2}$/.test(nueva)){
+          fijarFechaInicioPlan(nueva);
+          renderPlan();
+        } else if(nueva){
+          alert('Formato no válido. Usa AAAA-MM-DD, por ejemplo 2026-09-10.');
+        }
+      });
+    }
 
 
     // --- "Qué te toca ahora" ---
@@ -1624,25 +1790,26 @@
       if(b.pequeno) return; // los pequeños van en Fase 3
       var p = progresos[idx];
       var pct1 = p.total ? Math.round(100 * p.vistas / p.total) : 0;
-      var objetivoBloqueHoy = Math.round(Math.min(1, semanaInfo.periodo / semanaInfo.totalPeriodos) * p.total);
+      var objetivoBloqueHoy = objetivoAcumulado(p.total, semanaInfo.inicio, semanaInfo.dias);
       var objetivoPorPeriodo = Math.round(p.total / semanaInfo.totalPeriodos);
       var row1 = document.createElement('div');
-      row1.className = 'plan-card';
+      row1.className = 'plan-card' + (pct1 >= 100 ? ' plan-card-celebra' : '');
       row1.innerHTML =
-        '<div class="plan-card-header"><span class="plan-card-nombre">' + escapeHtml(b.nombre) + '</span><span class="plan-card-frac">' + p.vistas + ' / ' + p.total + '</span></div>' +
+        '<div class="plan-card-header"><span class="plan-card-nombre">' + (pct1 >= 100 ? '🎉 ' : '') + escapeHtml(b.nombre) + '</span><span class="plan-card-frac">' + p.vistas + ' / ' + p.total + '</span></div>' +
         barraHtml(pct1, pct1 >= 100 ? 'var(--ok)' : 'var(--accent)') +
         '<div class="plan-stats-row">' +
+          (pct1 >= 100 ? '<span class="plan-stat-pill" style="color:var(--ok);">¡Primera vuelta completa!</span>' :
           '<span class="plan-stat-pill">Objetivo a estas alturas: <b>' + objetivoBloqueHoy + '</b></span>' +
-          '<span class="plan-stat-pill">Ritmo por bloque (3-4 días): <b>~' + objetivoPorPeriodo + '</b></span>' +
+          '<span class="plan-stat-pill">Ritmo por bloque (3-4 días): <b>~' + objetivoPorPeriodo + '</b></span>') +
         '</div>';
       f1.appendChild(row1);
 
       if(p.vistas >= p.total && p.total > 0){
         var pctFall = p.falladasVivas === 0 ? 100 : Math.max(0, 100 - Math.round(100 * p.falladasVivas / p.total));
         var row2 = document.createElement('div');
-        row2.className = 'plan-card';
+        row2.className = 'plan-card' + (p.falladasVivas === 0 ? ' plan-card-celebra' : '');
         row2.innerHTML =
-          '<div class="plan-card-header"><span class="plan-card-nombre">' + escapeHtml(b.nombre) + '</span><span class="plan-card-frac" style="color:' + (p.falladasVivas === 0 ? 'var(--ok)' : 'var(--bad)') + ';">' + (p.falladasVivas === 0 ? '✅ 0 falladas' : p.falladasVivas + ' falladas') + '</span></div>' +
+          '<div class="plan-card-header"><span class="plan-card-nombre">' + (p.falladasVivas === 0 ? '🏆 ' : '') + escapeHtml(b.nombre) + '</span><span class="plan-card-frac" style="color:' + (p.falladasVivas === 0 ? 'var(--ok)' : 'var(--bad)') + ';">' + (p.falladasVivas === 0 ? '✅ 0 falladas' : p.falladasVivas + ' falladas') + '</span></div>' +
           barraHtml(pctFall, p.falladasVivas === 0 ? 'var(--ok)' : 'var(--bad)');
         f2.appendChild(row2);
       }
