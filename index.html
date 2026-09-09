@@ -368,6 +368,7 @@
   <header class="top">
     <h1>📘 Test Oposición — Técnico de Comunicación A2</h1>
     <p>Ayuntamiento de Cartagena · Banco de preguntas por temática</p>
+    <button class="btn btn-ghost btn-sm" id="btn-abrir-plan" style="margin-top:8px;">📅 Mi plan de estudio</button>
   </header>
 
   <!-- ============ PANTALLA 1: CONFIGURACIÓN ============ -->
@@ -528,6 +529,36 @@
         <button class="btn btn-ghost hidden" id="btn-repetir-test">🔁 Repetir estas preguntas</button>
         <button class="btn btn-primary hidden" id="btn-repasar-falladas">🔁 Repasar falladas</button>
       </div>
+    </div>
+  </section>
+
+  <!-- ============ PANTALLA 4: MI PLAN DE ESTUDIO ============ -->
+  <section id="pantalla-plan" class="card stack hidden">
+    <div class="row between">
+      <strong style="font-size:1.05rem;">📅 Mi plan de estudio</strong>
+      <button class="btn btn-ghost btn-sm" id="btn-plan-volver">← Volver</button>
+    </div>
+
+    <div id="plan-hoy" style="background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.4);border-radius:10px;padding:12px 14px;"></div>
+
+    <div class="stack" style="gap:6px;">
+      <strong style="font-size:0.92rem;">Fase 1 · Primera vuelta completa</strong>
+      <span style="font-size:0.78rem;color:var(--text-dim);">Cada bloque, al menos una vez entero (marca ese tema y pide "todas" las preguntas).</span>
+      <div id="plan-fase1-general" class="stack" style="gap:8px;margin-top:6px;"></div>
+      <div id="plan-fase1-especifica" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="stack" style="gap:6px;margin-top:8px;">
+      <strong style="font-size:0.92rem;">Fase 2 · Repaso dirigido (Falladas)</strong>
+      <span style="font-size:0.78rem;color:var(--text-dim);">Solo aparece disponible cuando la Fase 1 de ese bloque está completa. Usa el modo "⚠️ Falladas" filtrando ese tema.</span>
+      <div id="plan-fase2-general" class="stack" style="gap:8px;margin-top:6px;"></div>
+      <div id="plan-fase2-especifica" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="stack" style="gap:6px;margin-top:8px;">
+      <strong style="font-size:0.92rem;">Fase 3 · Repaso final</strong>
+      <span style="font-size:0.78rem;color:var(--text-dim);">Últimos días: bloques pequeños a cero fallos y limpieza total de Falladas.</span>
+      <div id="plan-fase3" class="stack" style="gap:8px;margin-top:6px;"></div>
     </div>
   </section>
 
@@ -1404,7 +1435,7 @@
   });
 
   function mostrarPantalla(nombre){
-    ['config','quiz','resultados'].forEach(function(p){
+    ['config','quiz','resultados','plan'].forEach(function(p){
       document.getElementById('pantalla-' + p).classList.toggle('hidden', p !== nombre);
     });
     window.scrollTo(0,0);
@@ -1449,6 +1480,188 @@
     // cambios locales que convendría subir a la nube.
     onLocalChange: null
   };
+
+  // ---------- Mi plan de estudio ----------
+  var ESPECIFICA_KEY = 'oposicion_cartagena_especifica_v1';
+  var FASE3_KEY = 'oposicion_cartagena_fase3_v1';
+  var NUM_TEMAS_ESPECIFICA = 48;
+
+  var BLOQUES_GENERAL = [
+    { nombre: 'Constitución Española (todos los títulos)', match: function(t){ return t.indexOf('CE') === 0; } },
+    { nombre: 'Ley 39/2015 (Procedimiento Administrativo Común)', match: function(t){ return t === 'Ley 39/2015 · Procedimiento Administrativo Común de las Administraciones Públicas'; } },
+    { nombre: 'TREBEP', match: function(t){ return t === 'TRLEBEP'; } },
+    { nombre: 'Ley 7/1985 (LBRL, Régimen Local)', match: function(t){ return t === 'Ley 7/1985 · Reguladora de las Bases del Régimen Local (LBRL)'; } },
+    { nombre: 'LO 3/2007 (Igualdad efectiva)', match: function(t){ return t === 'Ley Orgánica 3/2007 · Igualdad efectiva de mujeres y hombres'; } },
+    { nombre: 'Ley 31/1995 (LPRL, Riesgos Laborales)', match: function(t){ return t === 'Ley 31/1995 · Prevención de Riesgos Laborales (LPRL)'; } },
+    { nombre: 'Ley 19/2013 (LTAIBG, Transparencia)', match: function(t){ return t === 'Ley 19/2013 · Transparencia, Acceso a la Información Pública y Buen Gobierno (LTAIBG)'; }, pequeno: true },
+    { nombre: 'EA Región de Murcia', match: function(t){ return t === 'Ley Orgánica 4/1982 · Estatuto de Autonomía para la Región de Murcia'; }, pequeno: true },
+    { nombre: 'Ley 40/2015 (Régimen Jurídico Sector Público)', match: function(t){ return t === 'Ley 40/2015 · Régimen Jurídico del Sector Público'; }, pequeno: true },
+    { nombre: 'RD 485/1997 (Señalización Seg. y Salud)', match: function(t){ return t === 'Real Decreto 485/1997 · Señalización de Seguridad y Salud en el Trabajo'; }, pequeno: true }
+  ];
+
+  function progresoBloque(bloque){
+    var preguntas = ALL_QUESTIONS.filter(function(q){ return bloque.match(q.tema); });
+    var total = preguntas.length;
+    var vistas = 0, falladasVivas = 0;
+    preguntas.forEach(function(q){
+      if(statsDB[q.id] && statsDB[q.id].intentos > 0) vistas++;
+      if(falladasDB[q.id] && falladasDB[q.id].lastFailed) falladasVivas++;
+    });
+    return { total: total, vistas: vistas, falladasVivas: falladasVivas };
+  }
+
+  function barraHtml(pct, color){
+    return '<div style="background:rgba(255,255,255,0.08);border-radius:6px;height:8px;overflow:hidden;">' +
+      '<div style="background:' + color + ';height:100%;width:' + pct + '%;"></div></div>';
+  }
+
+  function cargarEspecifica(){ return cargarJSON(ESPECIFICA_KEY, {}); }
+  function guardarEspecifica(d){ guardarJSON(ESPECIFICA_KEY, d); }
+  function cargarFase3(){ return cargarJSON(FASE3_KEY, {}); }
+  function guardarFase3(d){ guardarJSON(FASE3_KEY, d); }
+
+  function renderPlan(){
+    var progresos = BLOQUES_GENERAL.map(progresoBloque);
+    var especifica = cargarEspecifica();
+    var fase3Data = cargarFase3();
+
+    // --- "Qué te toca ahora" ---
+    var hoyEl = document.getElementById('plan-hoy');
+    var sugerencia = null;
+    var ordenPorTamano = BLOQUES_GENERAL.map(function(b, i){ return {b: b, p: progresos[i]}; })
+      .filter(function(x){ return !x.b.pequeno; })
+      .sort(function(a, b2){ return b2.p.total - a.p.total; });
+    for(var i = 0; i < ordenPorTamano.length; i++){
+      var x = ordenPorTamano[i];
+      if(x.p.vistas < x.p.total){
+        sugerencia = 'Toca <b>' + escapeHtml(x.b.nombre) + '</b> (Fase 1): llevas ' + x.p.vistas + ' de ' + x.p.total + '. Marca solo ese tema y pide "todas".';
+        break;
+      }
+    }
+    if(!sugerencia){
+      for(var j = 0; j < ordenPorTamano.length; j++){
+        var y = ordenPorTamano[j];
+        if(y.p.falladasVivas > 0){
+          sugerencia = 'Toca <b>' + escapeHtml(y.b.nombre) + '</b> (Fase 2 · Falladas): te quedan ' + y.p.falladasVivas + ' preguntas falladas vivas. Usa el modo "⚠️ Falladas" con ese tema marcado.';
+          break;
+        }
+      }
+    }
+    var especificaVuelta1 = Object.keys(especifica).filter(function(k){ return especifica[k] && especifica[k].v1; }).length;
+    if(!sugerencia && especificaVuelta1 < NUM_TEMAS_ESPECIFICA){
+      sugerencia = 'Toca avanzar con la <b>parte específica</b>: llevas ' + especificaVuelta1 + ' de ' + NUM_TEMAS_ESPECIFICA + ' temas en su primera vuelta.';
+    }
+    if(!sugerencia){
+      sugerencia = '¡Fase 1 y 2 completas en todos los bloques grandes! Pasa a la Fase 3: repaso final de los bloques pequeños y limpieza de Falladas restantes.';
+    }
+    hoyEl.innerHTML = '<strong style="font-size:0.85rem;">👉 Qué te toca ahora</strong><p style="margin:6px 0 0;font-size:0.85rem;">' + sugerencia + '</p>';
+
+    // --- Fase 1 y Fase 2: bloques generales grandes/medianos ---
+    var f1 = document.getElementById('plan-fase1-general');
+    var f2 = document.getElementById('plan-fase2-general');
+    f1.innerHTML = '';
+    f2.innerHTML = '';
+    BLOQUES_GENERAL.forEach(function(b, idx){
+      if(b.pequeno) return; // los pequeños van en Fase 3
+      var p = progresos[idx];
+      var pct1 = p.total ? Math.round(100 * p.vistas / p.total) : 0;
+      var row1 = document.createElement('div');
+      row1.innerHTML = '<div class="row between" style="font-size:0.82rem;"><span>' + escapeHtml(b.nombre) + '</span><span>' + p.vistas + '/' + p.total + '</span></div>' +
+        barraHtml(pct1, pct1 >= 100 ? 'var(--ok)' : 'var(--accent)');
+      f1.appendChild(row1);
+
+      if(p.vistas >= p.total && p.total > 0){
+        var pctFall = p.falladasVivas === 0 ? 100 : Math.max(0, 100 - Math.round(100 * p.falladasVivas / p.total));
+        var row2 = document.createElement('div');
+        row2.innerHTML = '<div class="row between" style="font-size:0.82rem;"><span>' + escapeHtml(b.nombre) + '</span><span>' + (p.falladasVivas === 0 ? '✅ 0 falladas' : p.falladasVivas + ' falladas vivas') + '</span></div>' +
+          barraHtml(pctFall, p.falladasVivas === 0 ? 'var(--ok)' : 'var(--bad)');
+        f2.appendChild(row2);
+      }
+    });
+
+    // --- Específica: checklist manual de 48 temas ---
+    var elEspV1 = document.getElementById('plan-fase1-especifica');
+    var elEspV2 = document.getElementById('plan-fase2-especifica');
+    var htmlV1 = '<div class="row between" style="font-size:0.82rem;margin-bottom:4px;"><span>Parte específica · Vuelta 1</span><span>' + especificaVuelta1 + '/' + NUM_TEMAS_ESPECIFICA + '</span></div>' + barraHtml(especificaVuelta1 / NUM_TEMAS_ESPECIFICA * 100, especificaVuelta1 >= NUM_TEMAS_ESPECIFICA ? 'var(--ok)' : 'var(--accent)');
+    htmlV1 += '<div class="temas-grid" style="margin-top:6px;">';
+    for(var t = 1; t <= NUM_TEMAS_ESPECIFICA; t++){
+      var checkedV1 = especifica[t] && especifica[t].v1;
+      htmlV1 += '<label class="tema-chip' + (checkedV1 ? ' checked' : '') + '"><input type="checkbox" data-esp-v1="' + t + '" ' + (checkedV1 ? 'checked' : '') + '><span class="label">Tema ' + t + '</span></label>';
+    }
+    htmlV1 += '</div>';
+    elEspV1.innerHTML = htmlV1;
+
+    var especificaVuelta2 = Object.keys(especifica).filter(function(k){ return especifica[k] && especifica[k].v2; }).length;
+    var htmlV2 = '<div class="row between" style="font-size:0.82rem;margin-bottom:4px;"><span>Parte específica · Vuelta 2</span><span>' + especificaVuelta2 + '/' + NUM_TEMAS_ESPECIFICA + '</span></div>' + barraHtml(especificaVuelta2 / NUM_TEMAS_ESPECIFICA * 100, especificaVuelta2 >= NUM_TEMAS_ESPECIFICA ? 'var(--ok)' : 'var(--accent)');
+    htmlV2 += '<div class="temas-grid" style="margin-top:6px;">';
+    for(var t2 = 1; t2 <= NUM_TEMAS_ESPECIFICA; t2++){
+      var checkedV2 = especifica[t2] && especifica[t2].v2;
+      var habilitadoV2 = especifica[t2] && especifica[t2].v1;
+      htmlV2 += '<label class="tema-chip' + (checkedV2 ? ' checked' : '') + '" style="' + (habilitadoV2 ? '' : 'opacity:0.4;') + '"><input type="checkbox" data-esp-v2="' + t2 + '" ' + (checkedV2 ? 'checked' : '') + (habilitadoV2 ? '' : ' disabled') + '><span class="label">Tema ' + t2 + '</span></label>';
+    }
+    htmlV2 += '</div>';
+    elEspV2.innerHTML = htmlV2;
+
+    Array.prototype.forEach.call(elEspV1.querySelectorAll('[data-esp-v1]'), function(cb){
+      cb.addEventListener('change', function(){
+        var d = cargarEspecifica();
+        var k = this.dataset.espV1;
+        d[k] = d[k] || {};
+        d[k].v1 = this.checked;
+        if(!this.checked) d[k].v2 = false;
+        guardarEspecifica(d);
+        renderPlan();
+      });
+    });
+    Array.prototype.forEach.call(elEspV2.querySelectorAll('[data-esp-v2]'), function(cb){
+      cb.addEventListener('change', function(){
+        var d = cargarEspecifica();
+        var k = this.dataset.espV2;
+        d[k] = d[k] || {};
+        d[k].v2 = this.checked;
+        guardarEspecifica(d);
+        renderPlan();
+      });
+    });
+
+    // --- Fase 3: bloques pequeños + limpieza final ---
+    var f3 = document.getElementById('plan-fase3');
+    f3.innerHTML = '';
+    BLOQUES_GENERAL.forEach(function(b, idx){
+      if(!b.pequeno) return;
+      var p = progresos[idx];
+      var checked = !!fase3Data[b.nombre];
+      var row = document.createElement('label');
+      row.className = 'tema-chip' + (checked ? ' checked' : '');
+      row.style.width = '100%';
+      row.innerHTML = '<input type="checkbox" data-fase3="' + escapeHtml(b.nombre) + '" ' + (checked ? 'checked' : '') + '>' +
+        '<span class="label">' + escapeHtml(b.nombre) + ' — ' + p.vistas + '/' + p.total + ' vistas, ' + p.falladasVivas + ' falladas vivas</span>';
+      f3.appendChild(row);
+    });
+    var f3Especifica = document.createElement('label');
+    f3Especifica.className = 'tema-chip' + (fase3Data['especifica'] ? ' checked' : '');
+    f3Especifica.style.width = '100%';
+    f3Especifica.innerHTML = '<input type="checkbox" data-fase3="especifica" ' + (fase3Data['especifica'] ? 'checked' : '') + '>' +
+      '<span class="label">Repaso final íntegro de la parte específica (240)</span>';
+    f3.appendChild(f3Especifica);
+    Array.prototype.forEach.call(f3.querySelectorAll('[data-fase3]'), function(cb){
+      cb.addEventListener('change', function(){
+        var d = cargarFase3();
+        d[this.dataset.fase3] = this.checked;
+        guardarFase3(d);
+        renderPlan();
+      });
+    });
+  }
+
+  document.getElementById('btn-abrir-plan').addEventListener('click', function(){
+    renderPlan();
+    mostrarPantalla('plan');
+  });
+  document.getElementById('btn-plan-volver').addEventListener('click', function(){
+    mostrarPantalla('config');
+    actualizarResumenSeleccion();
+  });
 
   // ---------- Inicio ----------
   renderTemas();
