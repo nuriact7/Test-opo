@@ -539,6 +539,8 @@
       <button class="btn btn-ghost btn-sm" id="btn-plan-volver">← Volver</button>
     </div>
 
+    <div id="plan-ritmo" style="background:rgba(255,255,255,0.05);border-radius:10px;padding:10px 14px;"></div>
+
     <div id="plan-hoy" style="background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.4);border-radius:10px;padding:12px 14px;"></div>
 
     <div class="stack" style="gap:6px;">
@@ -1484,7 +1486,21 @@
   // ---------- Mi plan de estudio ----------
   var ESPECIFICA_KEY = 'oposicion_cartagena_especifica_v1';
   var FASE3_KEY = 'oposicion_cartagena_fase3_v1';
+  var PLAN_INICIO_KEY = 'oposicion_cartagena_plan_inicio_v1';
   var NUM_TEMAS_ESPECIFICA = 48;
+  var SEMANAS_OBJETIVO_FASE1 = 3; // orientativo: cuántas semanas te propones para completar la Fase 1
+
+  function obtenerSemanaPlan(){
+    var inicio = null;
+    try { inicio = window.localStorage.getItem(PLAN_INICIO_KEY); } catch(e){}
+    if(!inicio){
+      inicio = String(Date.now());
+      try { window.localStorage.setItem(PLAN_INICIO_KEY, inicio); } catch(e){}
+    }
+    var dias = Math.floor((Date.now() - parseInt(inicio, 10)) / 86400000);
+    var semana = Math.floor(dias / 7) + 1;
+    return { dias: dias, semana: semana };
+  }
 
   var BLOQUES_GENERAL = [
     { nombre: 'Constitución Española (todos los títulos)', match: function(t){ return t.indexOf('CE') === 0; } },
@@ -1524,6 +1540,20 @@
     var progresos = BLOQUES_GENERAL.map(progresoBloque);
     var especifica = cargarEspecifica();
     var fase3Data = cargarFase3();
+    var semanaInfo = obtenerSemanaPlan();
+
+    // --- Cabecera de ritmo: semana en curso y días desde que empezaste a usar el plan ---
+    var ritmoEl = document.getElementById('plan-ritmo');
+    var totalGeneralGrande = BLOQUES_GENERAL.filter(function(b){ return !b.pequeno; }).reduce(function(s, b){ return s + progresoBloque(b).total; }, 0);
+    var vistasGeneralGrande = BLOQUES_GENERAL.filter(function(b){ return !b.pequeno; }).reduce(function(s, b){ return s + progresoBloque(b).vistas; }, 0);
+    var objetivoAcumHastaHoy = Math.round(Math.min(1, semanaInfo.semana / SEMANAS_OBJETIVO_FASE1) * totalGeneralGrande);
+    var vasAdelantado = vistasGeneralGrande >= objetivoAcumHastaHoy;
+    ritmoEl.innerHTML = '<div class="row between" style="font-size:0.82rem;">' +
+      '<span>📆 Semana ' + semanaInfo.semana + ' de tu plan (día ' + (semanaInfo.dias + 1) + ') — objetivo orientativo: Fase 1 en ' + SEMANAS_OBJETIVO_FASE1 + ' semanas</span>' +
+      '</div>' +
+      '<div style="font-size:0.82rem;margin-top:4px;">Llevas <b>' + vistasGeneralGrande + '</b> de ' + totalGeneralGrande + ' preguntas de los bloques grandes. Para ir al ritmo de ' + SEMANAS_OBJETIVO_FASE1 + ' semanas, a estas alturas tocaría llevar unas <b>' + objetivoAcumHastaHoy + '</b>. ' +
+      (vasAdelantado ? '✅ Vas igual o por delante del ritmo.' : '⏳ Vas algo por detrás — nada grave, ajusta cuando puedas.') + '</div>';
+
 
     // --- "Qué te toca ahora" ---
     var hoyEl = document.getElementById('plan-hoy');
@@ -1565,9 +1595,11 @@
       if(b.pequeno) return; // los pequeños van en Fase 3
       var p = progresos[idx];
       var pct1 = p.total ? Math.round(100 * p.vistas / p.total) : 0;
+      var objetivoBloqueHoy = Math.round(Math.min(1, semanaInfo.semana / SEMANAS_OBJETIVO_FASE1) * p.total);
       var row1 = document.createElement('div');
       row1.innerHTML = '<div class="row between" style="font-size:0.82rem;"><span>' + escapeHtml(b.nombre) + '</span><span>' + p.vistas + '/' + p.total + '</span></div>' +
-        barraHtml(pct1, pct1 >= 100 ? 'var(--ok)' : 'var(--accent)');
+        barraHtml(pct1, pct1 >= 100 ? 'var(--ok)' : 'var(--accent)') +
+        '<div style="font-size:0.72rem;color:var(--text-dim);margin-top:2px;">Objetivo orientativo a estas alturas: ~' + objetivoBloqueHoy + '</div>';
       f1.appendChild(row1);
 
       if(p.vistas >= p.total && p.total > 0){
