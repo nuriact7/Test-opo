@@ -372,6 +372,14 @@
 
   <!-- ============ PANTALLA 1: CONFIGURACIÓN ============ -->
   <section id="pantalla-config" class="card stack">
+    <div id="banner-resume" class="hidden" style="background:rgba(255,193,7,0.12);border:1px solid rgba(255,193,7,0.4);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;">
+      <strong style="font-size:0.9rem;">⏸ Tienes un test sin terminar</strong>
+      <span id="banner-resume-detalle" style="font-size:0.82rem;color:var(--text-dim);"></span>
+      <div class="row" style="gap:8px;">
+        <button class="btn btn-sm" id="btn-resume-continuar" style="flex:1;">▶ Continuar</button>
+        <button class="btn btn-ghost btn-sm" id="btn-resume-descartar" style="flex:1;">Descartar</button>
+      </div>
+    </div>
     <div class="stack" style="gap:10px;">
       <div class="row between">
         <strong style="font-size:0.95rem;">Elige temática(s)</strong>
@@ -539,6 +547,8 @@
 
   // ---------- Carga de datos ----------
   var ALL_QUESTIONS = JSON.parse(document.getElementById('question-data').textContent);
+  var QUESTIONS_BY_ID = {};
+  ALL_QUESTIONS.forEach(function(q){ QUESTIONS_BY_ID[q.id] = q; });
   var idTemaMap = {};
   ALL_QUESTIONS.forEach(function(q){ idTemaMap[q.id] = q.tema; });
 
@@ -557,6 +567,7 @@
   var STATS_KEY = 'oposicion_cartagena_stats_v1';
   var HISTORY_KEY = 'oposicion_cartagena_historial_v1';
   var FAVORITOS_KEY = 'oposicion_cartagena_favoritos_v1';
+  var SESION_KEY = 'oposicion_cartagena_sesion_en_curso_v1';
 
   function cargarJSON(key, fallback){
     var raw = storage.get(key);
@@ -883,9 +894,85 @@
       el.textContent = '⏱ ' + formatTiempo(cronoSegundos);
     }, 1000);
   }
+  function continuarCrono(segundosIniciales){
+    cronoSegundos = segundosIniciales || 0;
+    var el = document.getElementById('quiz-cronometro');
+    el.textContent = '⏱ ' + formatTiempo(cronoSegundos);
+    el.classList.remove('hidden');
+    clearInterval(cronoInterval);
+    cronoInterval = setInterval(function(){
+      cronoSegundos++;
+      el.textContent = '⏱ ' + formatTiempo(cronoSegundos);
+    }, 1000);
+  }
   function detenerCrono(){
     clearInterval(cronoInterval);
     cronoInterval = null;
+  }
+
+  // ---------- Continuar test (permite cerrar la app a mitad y retomar sin perder ni repetir preguntas) ----------
+  function guardarSesionQuiz(){
+    var datos = {
+      ids: quizPreguntas.map(function(q){ return q.id; }),
+      indice: quizIndice,
+      correctas: quizCorrectas,
+      falladasIds: quizFalladas.map(function(q){ return q.id; }),
+      racha: quizRacha,
+      cronoActivo: cronoActivo,
+      cronoSegundos: cronoSegundos,
+      modo: modoActual,
+      ts: Date.now()
+    };
+    guardarJSON(SESION_KEY, datos);
+  }
+  function borrarSesionQuiz(){
+    try { window.localStorage.removeItem(SESION_KEY); } catch(e){}
+  }
+  function cargarSesionGuardada(){
+    var datos = cargarJSON(SESION_KEY, null);
+    if(!datos || !datos.ids || !datos.ids.length) return null;
+    if(datos.indice >= datos.ids.length) return null; // ya estaba terminado
+    // Si el banco de preguntas ha cambiado (ids que ya no existen), no ofrecemos reanudar.
+    for(var i = 0; i < datos.ids.length; i++){
+      if(!QUESTIONS_BY_ID[datos.ids[i]]) return null;
+    }
+    return datos;
+  }
+  function reanudarSesionQuiz(datos){
+    quizPreguntas = datos.ids.map(function(id){ return QUESTIONS_BY_ID[id]; });
+    quizIndice = datos.indice;
+    quizCorrectas = datos.correctas || 0;
+    quizFalladas = (datos.falladasIds || []).map(function(id){ return QUESTIONS_BY_ID[id]; });
+    quizRacha = datos.racha || 0;
+    respuestaBloqueada = false;
+    cronoActivo = !!datos.cronoActivo;
+    if(cronoActivo){
+      continuarCrono(datos.cronoSegundos || 0);
+    } else {
+      detenerCrono();
+      document.getElementById('quiz-cronometro').classList.add('hidden');
+    }
+    document.getElementById('banner-resume').classList.add('hidden');
+    mostrarPantalla('quiz');
+    renderPregunta();
+  }
+  function comprobarSesionGuardada(){
+    var datos = cargarSesionGuardada();
+    var banner = document.getElementById('banner-resume');
+    if(!datos){
+      banner.classList.add('hidden');
+      return;
+    }
+    document.getElementById('banner-resume-detalle').textContent =
+      'Ibas por la pregunta ' + (datos.indice + 1) + ' de ' + datos.ids.length + '. Puedes seguir justo donde lo dejaste.';
+    banner.classList.remove('hidden');
+    document.getElementById('btn-resume-continuar').onclick = function(){
+      reanudarSesionQuiz(datos);
+    };
+    document.getElementById('btn-resume-descartar').onclick = function(){
+      borrarSesionQuiz();
+      banner.classList.add('hidden');
+    };
   }
 
   function barajar(arr){
@@ -913,6 +1000,7 @@
     }
     mostrarPantalla('quiz');
     renderPregunta();
+    guardarSesionQuiz();
   }
 
   document.getElementById('btn-empezar').addEventListener('click', function(){
@@ -1032,15 +1120,18 @@
   document.getElementById('btn-siguiente').addEventListener('click', function(){
     quizIndice++;
     if(quizIndice >= quizPreguntas.length){
+      borrarSesionQuiz();
       mostrarResultados();
     } else {
+      guardarSesionQuiz();
       renderPregunta();
     }
   });
 
   document.getElementById('btn-salir').addEventListener('click', function(){
-    if(confirm('¿Seguro que quieres salir? Perderás el progreso de este test (tus falladas y estadísticas ya quedan guardadas).')){
+    if(confirm('¿Seguro que quieres salir? Perderás el progreso de este test (tus falladas y estadísticas ya quedan guardadas).\n\nSi lo que quieres es continuarlo más tarde sin perder tu sitio, no hace falta que salgas: puedes simplemente cerrar la app y al volver te ofreceremos continuar donde lo dejaste.')){
       detenerCrono();
+      borrarSesionQuiz();
       mostrarPantalla('config');
       actualizarResumenSeleccion();
     }
@@ -1362,6 +1453,7 @@
   // ---------- Inicio ----------
   renderTemas();
   actualizarResumenSeleccion();
+  comprobarSesionGuardada();
   document.getElementById('footer-total-info').textContent = ALL_QUESTIONS.length + ' preguntas en el banco total';
 
 })();
