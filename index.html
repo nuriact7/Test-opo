@@ -5,6 +5,28 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Test Oposición · Técnico de Comunicación A2 · Ayto. Cartagena</title>
 <style>
+  .plan-ritmo-card{background:linear-gradient(135deg, rgba(59,130,246,0.18), rgba(59,130,246,0.05));border:1px solid rgba(59,130,246,0.35);border-radius:14px;padding:16px;}
+  .plan-ritmo-top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .plan-dia-num{font-size:2rem;font-weight:800;line-height:1;}
+  .plan-dia-label{font-size:0.72rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.04em;}
+  .plan-bloque-chip{background:rgba(255,255,255,0.08);border-radius:20px;padding:4px 12px;font-size:0.78rem;white-space:nowrap;}
+  .plan-badge{border-radius:20px;padding:5px 12px;font-size:0.8rem;font-weight:600;white-space:nowrap;}
+  .plan-badge.ok{background:rgba(34,197,94,0.18);color:#4ade80;}
+  .plan-badge.warn{background:rgba(251,191,36,0.18);color:#fbbf24;}
+  .plan-progreso-texto{font-size:0.85rem;margin-top:10px;}
+  .plan-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 14px;}
+  .plan-card-header{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
+  .plan-card-nombre{font-size:0.88rem;font-weight:600;}
+  .plan-card-frac{font-size:0.88rem;font-weight:700;color:var(--accent);}
+  .plan-stats-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;}
+  .plan-stat-pill{background:rgba(255,255,255,0.06);border-radius:8px;padding:5px 10px;font-size:0.72rem;color:var(--text-dim);}
+  .plan-stat-pill b{color:var(--text);}
+  .plan-fase-titulo{font-size:1rem;font-weight:700;margin-top:4px;}
+  .plan-fase-sub{font-size:0.78rem;color:var(--text-dim);margin-bottom:4px;display:block;}
+  .plan-hoy-card{background:linear-gradient(135deg, rgba(99,102,241,0.20), rgba(99,102,241,0.06));border:1px solid rgba(99,102,241,0.4);border-radius:14px;padding:16px;}
+  .plan-hoy-titulo{font-size:0.78rem;text-transform:uppercase;letter-spacing:0.04em;color:#a5b4fc;font-weight:700;}
+  .plan-hoy-texto{font-size:0.95rem;margin-top:6px;line-height:1.4;}
+</style>
   :root{
     --bg:#0f1420;
     --panel:#161d2e;
@@ -544,23 +566,23 @@
     <div id="plan-hoy" style="background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.4);border-radius:10px;padding:12px 14px;"></div>
 
     <div class="stack" style="gap:6px;">
-      <strong style="font-size:0.92rem;">Fase 1 · Primera vuelta completa</strong>
-      <span style="font-size:0.78rem;color:var(--text-dim);">Cada bloque, al menos una vez entero (marca ese tema y pide "todas" las preguntas).</span>
-      <div id="plan-fase1-general" class="stack" style="gap:8px;margin-top:6px;"></div>
+      <span class="plan-fase-titulo">Fase 1 · Primera vuelta completa</span>
+      <span class="plan-fase-sub">Cada bloque, al menos una vez entero (marca ese tema y pide "todas" las preguntas).</span>
+      <div id="plan-fase1-general" class="stack" style="gap:10px;margin-top:4px;"></div>
       <div id="plan-fase1-especifica" style="margin-top:10px;"></div>
     </div>
 
-    <div class="stack" style="gap:6px;margin-top:8px;">
-      <strong style="font-size:0.92rem;">Fase 2 · Repaso dirigido (Falladas)</strong>
-      <span style="font-size:0.78rem;color:var(--text-dim);">Solo aparece disponible cuando la Fase 1 de ese bloque está completa. Usa el modo "⚠️ Falladas" filtrando ese tema.</span>
-      <div id="plan-fase2-general" class="stack" style="gap:8px;margin-top:6px;"></div>
+    <div class="stack" style="gap:6px;margin-top:10px;">
+      <span class="plan-fase-titulo">Fase 2 · Repaso dirigido (Falladas)</span>
+      <span class="plan-fase-sub">Aparece cuando la Fase 1 de ese bloque está completa. Usa el modo "⚠️ Falladas" filtrando ese tema.</span>
+      <div id="plan-fase2-general" class="stack" style="gap:10px;margin-top:4px;"></div>
       <div id="plan-fase2-especifica" style="margin-top:10px;"></div>
     </div>
 
-    <div class="stack" style="gap:6px;margin-top:8px;">
-      <strong style="font-size:0.92rem;">Fase 3 · Repaso final</strong>
-      <span style="font-size:0.78rem;color:var(--text-dim);">Últimos días: bloques pequeños a cero fallos y limpieza total de Falladas.</span>
-      <div id="plan-fase3" class="stack" style="gap:8px;margin-top:6px;"></div>
+    <div class="stack" style="gap:6px;margin-top:10px;">
+      <span class="plan-fase-titulo">Fase 3 · Repaso final</span>
+      <span class="plan-fase-sub">Últimos días: bloques pequeños a cero fallos y limpieza total de Falladas.</span>
+      <div id="plan-fase3" class="stack" style="gap:8px;margin-top:4px;"></div>
     </div>
   </section>
 
@@ -1488,7 +1510,8 @@
   var FASE3_KEY = 'oposicion_cartagena_fase3_v1';
   var PLAN_INICIO_KEY = 'oposicion_cartagena_plan_inicio_v1';
   var NUM_TEMAS_ESPECIFICA = 48;
-  var SEMANAS_OBJETIVO_FASE1 = 3; // orientativo: cuántas semanas te propones para completar la Fase 1
+  var DIAS_OBJETIVO_FASE1 = 21; // orientativo: días totales que te propones para completar la Fase 1 (3 semanas)
+  var DIAS_POR_PERIODO = 3.5; // agrupamos el ritmo en bloques de 3-4 días
 
   function obtenerSemanaPlan(){
     var inicio = null;
@@ -1498,8 +1521,9 @@
       try { window.localStorage.setItem(PLAN_INICIO_KEY, inicio); } catch(e){}
     }
     var dias = Math.floor((Date.now() - parseInt(inicio, 10)) / 86400000);
-    var semana = Math.floor(dias / 7) + 1;
-    return { dias: dias, semana: semana };
+    var periodo = Math.floor(dias / DIAS_POR_PERIODO) + 1;
+    var totalPeriodos = Math.ceil(DIAS_OBJETIVO_FASE1 / DIAS_POR_PERIODO);
+    return { dias: dias, periodo: periodo, totalPeriodos: totalPeriodos };
   }
 
   var BLOQUES_GENERAL = [
@@ -1542,17 +1566,21 @@
     var fase3Data = cargarFase3();
     var semanaInfo = obtenerSemanaPlan();
 
-    // --- Cabecera de ritmo: semana en curso y días desde que empezaste a usar el plan ---
+    // --- Cabecera de ritmo: bloque de 3-4 días en curso ---
     var ritmoEl = document.getElementById('plan-ritmo');
     var totalGeneralGrande = BLOQUES_GENERAL.filter(function(b){ return !b.pequeno; }).reduce(function(s, b){ return s + progresoBloque(b).total; }, 0);
     var vistasGeneralGrande = BLOQUES_GENERAL.filter(function(b){ return !b.pequeno; }).reduce(function(s, b){ return s + progresoBloque(b).vistas; }, 0);
-    var objetivoAcumHastaHoy = Math.round(Math.min(1, semanaInfo.semana / SEMANAS_OBJETIVO_FASE1) * totalGeneralGrande);
+    var objetivoAcumHastaHoy = Math.round(Math.min(1, semanaInfo.periodo / semanaInfo.totalPeriodos) * totalGeneralGrande);
     var vasAdelantado = vistasGeneralGrande >= objetivoAcumHastaHoy;
-    ritmoEl.innerHTML = '<div class="row between" style="font-size:0.82rem;">' +
-      '<span>📆 Semana ' + semanaInfo.semana + ' de tu plan (día ' + (semanaInfo.dias + 1) + ') — objetivo orientativo: Fase 1 en ' + SEMANAS_OBJETIVO_FASE1 + ' semanas</span>' +
+    ritmoEl.className = 'plan-ritmo-card';
+    ritmoEl.innerHTML =
+      '<div class="plan-ritmo-top">' +
+        '<div><div class="plan-dia-num">Día ' + (semanaInfo.dias + 1) + '</div><div class="plan-dia-label">de tu plan</div></div>' +
+        '<span class="plan-bloque-chip">📦 Bloque ' + semanaInfo.periodo + ' de ' + semanaInfo.totalPeriodos + ' <span style="opacity:0.7;">(3-4 días c/u)</span></span>' +
+        '<span class="plan-badge ' + (vasAdelantado ? 'ok' : 'warn') + '">' + (vasAdelantado ? '✅ Al día' : '⏳ Un poco atrasada') + '</span>' +
       '</div>' +
-      '<div style="font-size:0.82rem;margin-top:4px;">Llevas <b>' + vistasGeneralGrande + '</b> de ' + totalGeneralGrande + ' preguntas de los bloques grandes. Para ir al ritmo de ' + SEMANAS_OBJETIVO_FASE1 + ' semanas, a estas alturas tocaría llevar unas <b>' + objetivoAcumHastaHoy + '</b>. ' +
-      (vasAdelantado ? '✅ Vas igual o por delante del ritmo.' : '⏳ Vas algo por detrás — nada grave, ajusta cuando puedas.') + '</div>';
+      '<div class="plan-progreso-texto">Llevas <b>' + vistasGeneralGrande + '</b> / ' + totalGeneralGrande + ' preguntas de los bloques grandes · objetivo a estas alturas: <b>' + objetivoAcumHastaHoy + '</b> (meta: Fase 1 en ' + DIAS_OBJETIVO_FASE1 + ' días)</div>' +
+      barraHtml(totalGeneralGrande ? Math.round(100 * vistasGeneralGrande / totalGeneralGrande) : 0, 'var(--accent)');
 
 
     // --- "Qué te toca ahora" ---
@@ -1584,7 +1612,8 @@
     if(!sugerencia){
       sugerencia = '¡Fase 1 y 2 completas en todos los bloques grandes! Pasa a la Fase 3: repaso final de los bloques pequeños y limpieza de Falladas restantes.';
     }
-    hoyEl.innerHTML = '<strong style="font-size:0.85rem;">👉 Qué te toca ahora</strong><p style="margin:6px 0 0;font-size:0.85rem;">' + sugerencia + '</p>';
+    hoyEl.className = 'plan-hoy-card';
+    hoyEl.innerHTML = '<div class="plan-hoy-titulo">👉 Qué te toca ahora</div><div class="plan-hoy-texto">' + sugerencia + '</div>';
 
     // --- Fase 1 y Fase 2: bloques generales grandes/medianos ---
     var f1 = document.getElementById('plan-fase1-general');
@@ -1595,17 +1624,25 @@
       if(b.pequeno) return; // los pequeños van en Fase 3
       var p = progresos[idx];
       var pct1 = p.total ? Math.round(100 * p.vistas / p.total) : 0;
-      var objetivoBloqueHoy = Math.round(Math.min(1, semanaInfo.semana / SEMANAS_OBJETIVO_FASE1) * p.total);
+      var objetivoBloqueHoy = Math.round(Math.min(1, semanaInfo.periodo / semanaInfo.totalPeriodos) * p.total);
+      var objetivoPorPeriodo = Math.round(p.total / semanaInfo.totalPeriodos);
       var row1 = document.createElement('div');
-      row1.innerHTML = '<div class="row between" style="font-size:0.82rem;"><span>' + escapeHtml(b.nombre) + '</span><span>' + p.vistas + '/' + p.total + '</span></div>' +
+      row1.className = 'plan-card';
+      row1.innerHTML =
+        '<div class="plan-card-header"><span class="plan-card-nombre">' + escapeHtml(b.nombre) + '</span><span class="plan-card-frac">' + p.vistas + ' / ' + p.total + '</span></div>' +
         barraHtml(pct1, pct1 >= 100 ? 'var(--ok)' : 'var(--accent)') +
-        '<div style="font-size:0.72rem;color:var(--text-dim);margin-top:2px;">Objetivo orientativo a estas alturas: ~' + objetivoBloqueHoy + '</div>';
+        '<div class="plan-stats-row">' +
+          '<span class="plan-stat-pill">Objetivo a estas alturas: <b>' + objetivoBloqueHoy + '</b></span>' +
+          '<span class="plan-stat-pill">Ritmo por bloque (3-4 días): <b>~' + objetivoPorPeriodo + '</b></span>' +
+        '</div>';
       f1.appendChild(row1);
 
       if(p.vistas >= p.total && p.total > 0){
         var pctFall = p.falladasVivas === 0 ? 100 : Math.max(0, 100 - Math.round(100 * p.falladasVivas / p.total));
         var row2 = document.createElement('div');
-        row2.innerHTML = '<div class="row between" style="font-size:0.82rem;"><span>' + escapeHtml(b.nombre) + '</span><span>' + (p.falladasVivas === 0 ? '✅ 0 falladas' : p.falladasVivas + ' falladas vivas') + '</span></div>' +
+        row2.className = 'plan-card';
+        row2.innerHTML =
+          '<div class="plan-card-header"><span class="plan-card-nombre">' + escapeHtml(b.nombre) + '</span><span class="plan-card-frac" style="color:' + (p.falladasVivas === 0 ? 'var(--ok)' : 'var(--bad)') + ';">' + (p.falladasVivas === 0 ? '✅ 0 falladas' : p.falladasVivas + ' falladas') + '</span></div>' +
           barraHtml(pctFall, p.falladasVivas === 0 ? 'var(--ok)' : 'var(--bad)');
         f2.appendChild(row2);
       }
@@ -1614,8 +1651,8 @@
     // --- Específica: checklist manual de 48 temas ---
     var elEspV1 = document.getElementById('plan-fase1-especifica');
     var elEspV2 = document.getElementById('plan-fase2-especifica');
-    var htmlV1 = '<div class="row between" style="font-size:0.82rem;margin-bottom:4px;"><span>Parte específica · Vuelta 1</span><span>' + especificaVuelta1 + '/' + NUM_TEMAS_ESPECIFICA + '</span></div>' + barraHtml(especificaVuelta1 / NUM_TEMAS_ESPECIFICA * 100, especificaVuelta1 >= NUM_TEMAS_ESPECIFICA ? 'var(--ok)' : 'var(--accent)');
-    htmlV1 += '<div class="temas-grid" style="margin-top:6px;">';
+    var htmlV1 = '<div class="plan-card"><div class="plan-card-header"><span class="plan-card-nombre">Parte específica · Vuelta 1</span><span class="plan-card-frac">' + especificaVuelta1 + ' / ' + NUM_TEMAS_ESPECIFICA + '</span></div>' + barraHtml(especificaVuelta1 / NUM_TEMAS_ESPECIFICA * 100, especificaVuelta1 >= NUM_TEMAS_ESPECIFICA ? 'var(--ok)' : 'var(--accent)') + '</div>';
+    htmlV1 += '<div class="temas-grid" style="margin-top:8px;">';
     for(var t = 1; t <= NUM_TEMAS_ESPECIFICA; t++){
       var checkedV1 = especifica[t] && especifica[t].v1;
       htmlV1 += '<label class="tema-chip' + (checkedV1 ? ' checked' : '') + '"><input type="checkbox" data-esp-v1="' + t + '" ' + (checkedV1 ? 'checked' : '') + '><span class="label">Tema ' + t + '</span></label>';
@@ -1624,8 +1661,8 @@
     elEspV1.innerHTML = htmlV1;
 
     var especificaVuelta2 = Object.keys(especifica).filter(function(k){ return especifica[k] && especifica[k].v2; }).length;
-    var htmlV2 = '<div class="row between" style="font-size:0.82rem;margin-bottom:4px;"><span>Parte específica · Vuelta 2</span><span>' + especificaVuelta2 + '/' + NUM_TEMAS_ESPECIFICA + '</span></div>' + barraHtml(especificaVuelta2 / NUM_TEMAS_ESPECIFICA * 100, especificaVuelta2 >= NUM_TEMAS_ESPECIFICA ? 'var(--ok)' : 'var(--accent)');
-    htmlV2 += '<div class="temas-grid" style="margin-top:6px;">';
+    var htmlV2 = '<div class="plan-card"><div class="plan-card-header"><span class="plan-card-nombre">Parte específica · Vuelta 2</span><span class="plan-card-frac">' + especificaVuelta2 + ' / ' + NUM_TEMAS_ESPECIFICA + '</span></div>' + barraHtml(especificaVuelta2 / NUM_TEMAS_ESPECIFICA * 100, especificaVuelta2 >= NUM_TEMAS_ESPECIFICA ? 'var(--ok)' : 'var(--accent)') + '</div>';
+    htmlV2 += '<div class="temas-grid" style="margin-top:8px;">';
     for(var t2 = 1; t2 <= NUM_TEMAS_ESPECIFICA; t2++){
       var checkedV2 = especifica[t2] && especifica[t2].v2;
       var habilitadoV2 = especifica[t2] && especifica[t2].v1;
@@ -1664,17 +1701,23 @@
       var p = progresos[idx];
       var checked = !!fase3Data[b.nombre];
       var row = document.createElement('label');
-      row.className = 'tema-chip' + (checked ? ' checked' : '');
-      row.style.width = '100%';
-      row.innerHTML = '<input type="checkbox" data-fase3="' + escapeHtml(b.nombre) + '" ' + (checked ? 'checked' : '') + '>' +
-        '<span class="label">' + escapeHtml(b.nombre) + ' — ' + p.vistas + '/' + p.total + ' vistas, ' + p.falladasVivas + ' falladas vivas</span>';
+      row.className = 'plan-card' + (checked ? '' : '');
+      row.style.display = 'flex';
+      row.style.alignItems = 'center';
+      row.style.gap = '10px';
+      row.style.cursor = 'pointer';
+      row.innerHTML = '<input type="checkbox" data-fase3="' + escapeHtml(b.nombre) + '" ' + (checked ? 'checked' : '') + ' style="width:18px;height:18px;flex:none;accent-color:var(--accent);">' +
+        '<span style="font-size:0.85rem;">' + (checked ? '✅ ' : '') + escapeHtml(b.nombre) + '<br><span style="font-size:0.72rem;color:var(--text-dim);">' + p.vistas + '/' + p.total + ' vistas · ' + p.falladasVivas + ' falladas vivas</span></span>';
       f3.appendChild(row);
     });
     var f3Especifica = document.createElement('label');
-    f3Especifica.className = 'tema-chip' + (fase3Data['especifica'] ? ' checked' : '');
-    f3Especifica.style.width = '100%';
-    f3Especifica.innerHTML = '<input type="checkbox" data-fase3="especifica" ' + (fase3Data['especifica'] ? 'checked' : '') + '>' +
-      '<span class="label">Repaso final íntegro de la parte específica (240)</span>';
+    f3Especifica.className = 'plan-card';
+    f3Especifica.style.display = 'flex';
+    f3Especifica.style.alignItems = 'center';
+    f3Especifica.style.gap = '10px';
+    f3Especifica.style.cursor = 'pointer';
+    f3Especifica.innerHTML = '<input type="checkbox" data-fase3="especifica" ' + (fase3Data['especifica'] ? 'checked' : '') + ' style="width:18px;height:18px;flex:none;accent-color:var(--accent);">' +
+      '<span style="font-size:0.85rem;">' + (fase3Data['especifica'] ? '✅ ' : '') + 'Repaso final íntegro de la parte específica (240)</span>';
     f3.appendChild(f3Especifica);
     Array.prototype.forEach.call(f3.querySelectorAll('[data-fase3]'), function(cb){
       cb.addEventListener('change', function(){
