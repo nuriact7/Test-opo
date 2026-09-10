@@ -1004,11 +1004,13 @@
       ts: Date.now()
     };
     guardarJSON(SESIONES_KEY, sesiones);
+    avisarCambioLocal();
   }
   function borrarSesionQuiz(clave){
     var sesiones = cargarJSON(SESIONES_KEY, {});
     delete sesiones[clave || sesionActualClave];
     guardarJSON(SESIONES_KEY, sesiones);
+    avisarCambioLocal();
   }
   function listarSesionesGuardadas(){
     var sesiones = cargarJSON(SESIONES_KEY, {});
