@@ -1466,6 +1466,18 @@
       guardarJSON(DIARIO_KEY, diarioLocal);
     }
 
+    if(datos.sesiones){
+      var sesionesLocalesF = cargarJSON(SESIONES_KEY, {});
+      Object.keys(datos.sesiones).forEach(function(k){
+        var entrante = datos.sesiones[k];
+        if(!entrante) return;
+        if(!sesionesLocalesF[k] || (entrante.ts || 0) >= (sesionesLocalesF[k].ts || 0)){
+          sesionesLocalesF[k] = entrante;
+        }
+      });
+      guardarJSON(SESIONES_KEY, sesionesLocalesF);
+    }
+
     if(datos.planInicio){
       var actualInicio = null;
       try { actualInicio = window.localStorage.getItem(PLAN_INICIO_KEY); } catch(e){}
@@ -1559,6 +1571,7 @@
         especifica: cargarJSON(ESPECIFICA_KEY, {}),
         fase3: cargarJSON(FASE3_KEY, {}),
         diario: cargarJSON(DIARIO_KEY, {}),
+        sesiones: cargarJSON(SESIONES_KEY, {}),
         planInicio: planInicio
       };
     },
@@ -1576,10 +1589,23 @@
       guardarEspecifica(nuevo.especifica || {});
       guardarFase3(nuevo.fase3 || {});
       guardarJSON(DIARIO_KEY, nuevo.diario || {});
+      if(nuevo.sesiones){
+        var sesionesLocales = cargarJSON(SESIONES_KEY, {});
+        Object.keys(nuevo.sesiones).forEach(function(k){
+          var entrante = nuevo.sesiones[k];
+          if(!entrante) return;
+          if(k === sesionActualClave) return; // no pisar la tanda que tengo abierta ahora mismo en este dispositivo
+          if(!sesionesLocales[k] || (entrante.ts || 0) >= (sesionesLocales[k].ts || 0)){
+            sesionesLocales[k] = entrante;
+          }
+        });
+        guardarJSON(SESIONES_KEY, sesionesLocales);
+      }
       if(nuevo.planInicio){ try { window.localStorage.setItem(PLAN_INICIO_KEY, nuevo.planInicio); } catch(e){} }
       actualizarResumenSeleccion();
       if(panelProgresoAbierto) renderProgreso();
       if(!document.getElementById('pantalla-plan').classList.contains('hidden')) renderPlan();
+      if(!document.getElementById('pantalla-config').classList.contains('hidden')) comprobarSesionGuardada();
     },
     // Fusiona (de forma aditiva, sin duplicar ni perder nada) datos recibidos de la nube
     // con lo que ya hay en este dispositivo. Se usa solo la primera vez que se vincula
@@ -1593,6 +1619,7 @@
       actualizarResumenSeleccion();
       if(panelProgresoAbierto) renderProgreso();
       if(!document.getElementById('pantalla-plan').classList.contains('hidden')) renderPlan();
+      if(!document.getElementById('pantalla-config').classList.contains('hidden')) comprobarSesionGuardada();
       return resumen;
     },
     // El script de sincronización asigna aquí una función; se llama cada vez que hay
