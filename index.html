@@ -2123,6 +2123,11 @@
       stats: estado.stats,
       favoritos: estado.favoritos,
       historial: estado.historial,
+      especifica: estado.especifica,
+      fase3: estado.fase3,
+      diario: estado.diario,
+      sesiones: estado.sesiones,
+      planInicio: estado.planInicio,
       actualizadoEn: Date.now()
     }).catch(function(e){
       console.warn('No se pudo subir el progreso a la nube (se reintentará más tarde):', e);
@@ -2168,7 +2173,12 @@
               falladas: data.falladas || {},
               stats: data.stats || {},
               favoritos: data.favoritos || {},
-              historial: data.historial || []
+              historial: data.historial || [],
+              especifica: data.especifica || {},
+              fase3: data.fase3 || {},
+              diario: data.diario || {},
+              sesiones: data.sesiones || {},
+              planInicio: data.planInicio || null
             });
           }, function(err){
             console.warn('Error escuchando cambios en la nube:', err);
