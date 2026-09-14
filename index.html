@@ -1939,7 +1939,7 @@
     var diarioBloqueHoy = (cargarJSON(DIARIO_BLOQUE_KEY, {})[semanaInfo.hoy]) || {};
     var UMBRAL_FALLADAS_URGENTE = 15; // a partir de esta cifra, repasar falladas de ese bloque compite con la Fase 1, no espera a que termine
     var candidatosFalladasUrgentes = BLOQUES_GENERAL.map(function(b, i){ return {b: b, p: progresos[i]}; })
-      .filter(function(x){ return !x.b.pequeno && x.p.falladasVivas >= UMBRAL_FALLADAS_URGENTE; })
+      .filter(function(x){ return x.p.falladasVivas >= UMBRAL_FALLADAS_URGENTE; })
       .filter(function(x){ return (diarioBloqueHoy[x.b.nombre] || 0) === 0; }) // que hoy aún no le hayas dedicado nada
       .sort(function(a, b2){ return b2.p.falladasVivas - a.p.falladasVivas; });
     if(candidatosFalladasUrgentes.length){
@@ -1947,7 +1947,7 @@
       sugerencia = 'Toca <b>' + escapeHtml(u.b.nombre) + '</b> (Fase 2 · Falladas): se te han acumulado ' + u.p.falladasVivas + ' preguntas falladas vivas — mejor repasarlas ahora con el modo "⚠️ Falladas" antes de que sigan creciendo, sin esperar a terminar la Fase 1 entera de este bloque.';
     }
     var candidatosFase1 = BLOQUES_GENERAL.map(function(b, i){ return {b: b, p: progresos[i]}; })
-      .filter(function(x){ return !x.b.pequeno && x.p.vistas < x.p.total; })
+      .filter(function(x){ return x.p.vistas < x.p.total; })
       .map(function(x){
         var objetivoHoy = objetivoAcumulado(x.p.total, semanaInfo.inicio, semanaInfo.dias);
         var objetivoDiarioBloque = Math.max(1, Math.round(x.p.total / DIAS_OBJETIVO_FASE1));
@@ -1964,7 +1964,6 @@
     }
     if(!sugerencia){
       var todosGrandes = BLOQUES_GENERAL.map(function(b, i){ return {b: b, p: progresos[i]}; })
-        .filter(function(x){ return !x.b.pequeno; })
         .sort(function(a, b2){ return b2.p.falladasVivas - a.p.falladasVivas; });
       for(var j = 0; j < todosGrandes.length; j++){
         var y = todosGrandes[j];
