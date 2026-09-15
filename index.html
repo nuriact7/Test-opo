@@ -2185,7 +2185,10 @@
             })
           });
           docRef = mods.firestoreMod.doc(db, 'progreso', codigo);
-          return mods.firestoreMod.getDoc(docRef);
+          return mods.firestoreMod.getDocFromServer(docRef).catch(function(){
+            // sin red disponible ahora mismo: nos conformamos con lo que haya en caché local
+            return mods.firestoreMod.getDoc(docRef);
+          });
         }).then(function(snapInicial){
           if(snapInicial.exists()){
             bridge.fusionar(snapInicial.data());
