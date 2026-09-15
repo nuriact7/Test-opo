@@ -980,9 +980,19 @@
   var sesionActualClave = null;
   var sesionActualEtiqueta = '';
 
+  function hashCorto(str){
+    var h = 0;
+    for(var i = 0; i < str.length; i++){
+      h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+    }
+    return (h >>> 0).toString(36);
+  }
   function claveSesionActual(){
     var temasElegidos = Object.keys(temasSeleccionados).filter(function(t){ return temasSeleccionados[t]; }).sort();
-    return modoActual + '::' + temasElegidos.join('|');
+    // Usamos un hash corto en vez de concatenar los nombres completos: con selecciones grandes
+    // (p. ej. los 48 temas de la parte específica a la vez) la clave podía superar el límite de
+    // longitud de un nombre de campo en Firestore y hacer fallar toda la sincronización.
+    return modoActual + '::' + hashCorto(temasElegidos.join('|')) + '::' + temasElegidos.length;
   }
   function etiquetaSesionActual(){
     var temasElegidos = Object.keys(temasSeleccionados).filter(function(t){ return temasSeleccionados[t]; });
@@ -1621,6 +1631,19 @@
   // Este objeto es la única forma en que el script de sincronización (Firebase) puede
   // leer o modificar el progreso local. Si ese script no llega a cargar (sin internet,
   // CDN bloqueado, etc.) esta app sigue funcionando exactamente igual, en modo local.
+  function sesionesSeguras(sesiones){
+    // Firestore rechaza nombres de campo de más de 1500 bytes. Con la clave antigua
+    // (que concatenaba los nombres de todos los temas elegidos) una sesión con muchos
+    // temas seleccionados a la vez podía superar ese límite y hacer fallar TODA la
+    // sincronización. Nos protegemos filtrando cualquier clave demasiado larga antes
+    // de subir nada, aunque haya quedado alguna guardada de antes de este arreglo.
+    var LIMITE = 400;
+    var resultado = {};
+    Object.keys(sesiones).forEach(function(k){
+      if(k.length <= LIMITE) resultado[k] = sesiones[k];
+    });
+    return resultado;
+  }
   window.__quizSync = {
     getState: function(){
       var planInicio = null;
@@ -1630,7 +1653,7 @@
         fase3: cargarJSON(FASE3_KEY, {}),
         diario: cargarJSON(DIARIO_KEY, {}),
         diarioBloque: cargarJSON(DIARIO_BLOQUE_KEY, {}),
-        sesiones: cargarJSON(SESIONES_KEY, {}),
+        sesiones: sesionesSeguras(cargarJSON(SESIONES_KEY, {})),
         planInicio: planInicio
       };
     },
