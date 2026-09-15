@@ -2154,6 +2154,7 @@
 
   var fsMod = null, db = null, docRef = null;
   var pushPendiente = false, pushTimer = null;
+  var codigoActivo = null, ultimoPushOk = null;
 
   function cargarSDK(){
     return Promise.all([
@@ -2179,8 +2180,12 @@
       sesiones: estado.sesiones,
       planInicio: estado.planInicio,
       actualizadoEn: Date.now()
+    }).then(function(){
+      ultimoPushOk = Date.now();
+      if(codigoActivo) mostrarVinculado('🔗 Sincronizado con "' + codigoActivo + '" · último envío OK (' + new Date().toLocaleTimeString() + ')');
     }).catch(function(e){
       console.warn('No se pudo subir el progreso a la nube (se reintentará más tarde):', e);
+      if(codigoActivo) mostrarVinculado('⚠ No se pudo subir el progreso a la nube ahora mismo (' + new Date().toLocaleTimeString() + '). Se reintentará con el próximo cambio.');
     });
   }
 
@@ -2221,6 +2226,7 @@
           mods.firestoreMod.onSnapshot(docRef, function(snap){
             if(!snap.exists()) return;
             if(snap.metadata.hasPendingWrites) return; // eco de nuestra propia escritura, ignorar
+            if(snap.metadata.fromCache) return; // versión de caché local, no un cambio real recibido ahora
             var data = snap.data();
             bridge.setState({
               falladas: data.falladas || {},
@@ -2233,10 +2239,13 @@
               sesiones: data.sesiones || {},
               planInicio: data.planInicio || null
             });
+            mostrarVinculado('🔗 Sincronizado con "' + codigo + '" · recibido cambio del otro dispositivo (' + new Date().toLocaleTimeString() + ')');
           }, function(err){
             console.warn('Error escuchando cambios en la nube:', err);
+            mostrarVinculado('⚠ Error escuchando cambios en la nube: ' + (err && err.message ? err.message : err));
           });
           bridge.onLocalChange = function(){ solicitarPush(bridge); };
+          codigoActivo = codigo;
           mostrarVinculado('🔗 Sincronizado con "' + codigo + '"');
         });
       });
