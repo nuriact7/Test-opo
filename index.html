@@ -1935,11 +1935,24 @@
         else { clase = 'rojo'; icono = '❌'; }
         contenido = actual + '/' + objetivoDiario;
       }
-      html += '<div class="plan-dia-chip ' + clase + (i === semanaInfo.dias ? ' hoy' : '') + '" title="' + fecha + ': ' + actual + ' de ' + objetivoDiario + '">' +
+      var clicable = (i <= semanaInfo.dias);
+      html += '<div class="plan-dia-chip ' + clase + (i === semanaInfo.dias ? ' hoy' : '') + '"' + (clicable ? ' data-fecha-ajustable="' + fecha + '" style="cursor:pointer;"' : '') + ' title="' + fecha + ': ' + actual + ' de ' + objetivoDiario + (clicable ? ' · toca para corregir este día' : '') + '">' +
         '<span class="num">' + (i + 1) + '</span><span class="icono">' + icono + '</span><span>' + contenido + '</span></div>';
     }
     html += '</div>';
     return html;
+  }
+  function ajustarDiaManual(fecha){
+    var texto = prompt('¿Cuántas preguntas quieres AÑADIR al día ' + fecha + '? (usa un número negativo para restar, por ejemplo si se contó de más)', '0');
+    if(texto === null) return;
+    var n = parseInt(texto, 10);
+    if(isNaN(n) || n === 0) return;
+    var diario = cargarJSON(DIARIO_KEY, {});
+    diario[fecha] = normalizarDia(diario[fecha]);
+    diario[fecha].manual = Math.max(0, (diario[fecha].manual || 0) + n);
+    guardarJSON(DIARIO_KEY, diario);
+    avisarCambioLocal();
+    renderPlan();
   }
 
   function objetivoAcumulado(totalBloque, inicio, hastaIndiceInclusive){
@@ -2020,6 +2033,9 @@
         '<button class="btn btn-ghost btn-sm" id="btn-plan-fecha" style="margin-top:10px;">Cambiar fecha de inicio (' + semanaInfo.inicio + ')</button>' +
         renderCalendarioDias(semanaInfo, totalGeneralGrande);
     }
+    Array.prototype.forEach.call(ritmoEl.querySelectorAll('[data-fecha-ajustable]'), function(chip){
+      chip.addEventListener('click', function(){ ajustarDiaManual(this.dataset.fechaAjustable); });
+    });
     var btnFecha = document.getElementById('btn-plan-fecha');
     if(btnFecha){
       btnFecha.addEventListener('click', function(){
