@@ -1583,6 +1583,7 @@
       guardarStats();
       guardarFavoritos();
       guardarHistorial();
+      limpiarHuerfanos();
       actualizarResumenSeleccion();
       if(panelProgresoAbierto) renderProgreso();
       avisarCambioLocal();
@@ -1713,6 +1714,7 @@
         guardarJSON(SESIONES_KEY, sesionesLocales);
       }
       if(nuevo.planInicio){ try { window.localStorage.setItem(PLAN_INICIO_KEY, nuevo.planInicio); } catch(e){} }
+      limpiarHuerfanos();
       actualizarResumenSeleccion();
       if(panelProgresoAbierto) renderProgreso();
       if(!document.getElementById('pantalla-plan').classList.contains('hidden')) renderPlan();
@@ -1727,6 +1729,7 @@
       guardarStats();
       guardarFavoritos();
       guardarHistorial();
+      limpiarHuerfanos();
       actualizarResumenSeleccion();
       if(panelProgresoAbierto) renderProgreso();
       if(!document.getElementById('pantalla-plan').classList.contains('hidden')) renderPlan();
@@ -2168,10 +2171,12 @@
   });
 
   // ---------- Inicio ----------
-  (function limpiarHuerfanos(){
+  function limpiarHuerfanos(){
     // Si alguna vez se elimina una pregunta del banco (por ejemplo, al corregir el contenido),
     // sus rastros en falladas/favoritas pueden quedar "huérfanos" apuntando a un id que ya no
-    // existe. Los quitamos aquí para que los contadores no se descuadren.
+    // existe. Los quitamos aquí para que los contadores no se descuadren. Se llama tanto al
+    // arrancar la app como cada vez que llega progreso nuevo (sincronización o importación),
+    // porque esos restos pueden reaparecer si venían guardados en la nube o en un archivo viejo.
     var huboCambios = false;
     Object.keys(falladasDB).forEach(function(id){
       if(!QUESTIONS_BY_ID[id]){ delete falladasDB[id]; huboCambios = true; }
@@ -2187,7 +2192,8 @@
       if(!QUESTIONS_BY_ID[id]){ delete statsDB[id]; huboCambios = true; }
     });
     if(huboCambios) guardarStats();
-  })();
+  }
+  limpiarHuerfanos();
   renderTemas();
   actualizarResumenSeleccion();
   renderAccesosRapidos();
