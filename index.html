@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="app-version" content="2026-10-10-1">
+<meta name="app-version" content="2026-10-10-3">
 <title>Test Oposición · Técnico de Comunicación A2 · Ayto. Cartagena</title>
 <style>
   .plan-ritmo-card{background:linear-gradient(135deg, rgba(59,130,246,0.18), rgba(59,130,246,0.05));border:1px solid rgba(59,130,246,0.35);border-radius:14px;padding:16px;}
@@ -876,7 +876,7 @@
 
     registrarPreguntaHoy();
     registrarBloqueHoy(id);
-    if(acierto) registrarAciertoHoy();
+    registrarAciertoHoy(acierto); // se anota siempre (suma 0 si fallas) para saber que este dispositivo lleva la cuenta de aciertos
 
     avisarCambioLocal();
   }
@@ -2016,13 +2016,19 @@
     if(entrada && typeof entrada === 'object' && entrada.manual) t -= entrada.manual;
     return Math.max(0, t);
   }
-  // Acierto de un conjunto de días: solo cuentan los días en los que existe registro de aciertos
-  // (los anteriores a que la app empezase a anotarlos tienen preguntas pero 0 aciertos y falseaban el %).
+  // Acierto de un conjunto de días. Solo cuentan los dispositivos que ese día tienen registro de aciertos:
+  // un dispositivo con una versión antigua de la app (o un día anterior al registro de aciertos) anota
+  // preguntas pero nunca aciertos, y entonces el % salía artificialmente bajo.
   function acumularAcierto(acc, fecha, diario, aciertosDia){
     if(aciertosDia[fecha] === undefined) return;
-    var t = respondidasRealesDia(diario[fecha]);
-    var a = Math.min(t, sumarValoresObjeto(aciertosDia[fecha]));
-    acc.total += t; acc.aciertos += a;
+    var t = normalizarDia(diario[fecha]), a = normalizarDia(aciertosDia[fecha]);
+    Object.keys(a).forEach(function(dev){
+      if(dev === 'manual' || dev === 'antiguo') return;
+      var tt = t[dev] || 0;
+      if(tt <= 0) return;
+      acc.total += tt;
+      acc.aciertos += Math.min(tt, a[dev] || 0);
+    });
   }
 
   function registrarPreguntaHoy(){
@@ -2037,12 +2043,12 @@
   // Contador paralelo de ACIERTOS por día (mismo esquema por dispositivo que DIARIO_KEY), para
   // poder calcular el % de acierto de la última semana sin tocar la estructura ya probada de arriba.
   var DIARIO_ACIERTOS_KEY = 'oposicion_cartagena_progreso_diario_aciertos_v1';
-  function registrarAciertoHoy(){
+  function registrarAciertoHoy(acierto){
     var d = cargarJSON(DIARIO_ACIERTOS_KEY, {});
     var hoy = fechaISO(new Date());
     var dev = obtenerDeviceId();
     d[hoy] = normalizarDia(d[hoy]);
-    d[hoy][dev] = (d[hoy][dev] || 0) + 1;
+    d[hoy][dev] = (d[hoy][dev] || 0) + (acierto === false ? 0 : 1);
     guardarJSON(DIARIO_ACIERTOS_KEY, d);
   }
 
@@ -2309,7 +2315,8 @@
       '<div class="plan-stats-row">' +
         '<span class="plan-stat-pill">Preguntas: <b>' + totalSemana + '</b></span>' +
         '<span class="plan-stat-pill" style="color:' + color + ';">Acierto: <b>' + (pct === null ? '—' : pct + '%') + '</b>' + (pct === null ? '' : ' (' + aciertosSemana + '/' + totalAcierto + ')') + '</span>' +
-      '</div></div>';
+      '</div>' +
+      '<div style="font-size:0.72rem;opacity:0.65;margin-top:6px;">Acierto = veces que has acertado ÷ respuestas dadas (cada respuesta cuenta, también las repetidas). No incluye días o dispositivos que no llevaban registro de aciertos.</div></div>';
   }
   function ajustarDiaManual(fecha){
     var texto = prompt('¿Cuántas preguntas quieres AÑADIR al día ' + fecha + '? (usa un número negativo para restar, por ejemplo si se contó de más)', '0');
@@ -2736,7 +2743,7 @@
   actualizarResumenSeleccion();
   renderAccesosRapidos();
   comprobarSesionGuardada();
-  var APP_VERSION = '2026-10-10-1';
+  var APP_VERSION = '2026-10-10-3';
   document.getElementById('footer-total-info').textContent = ALL_QUESTIONS.length + ' preguntas en el banco total · versión ' + APP_VERSION;
 
   // Aviso de versión nueva: como el navegador guarda copias antiguas de la página, una vez por hora
