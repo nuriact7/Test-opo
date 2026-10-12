@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="app-version" content="2026-10-10-3">
+<meta name="app-version" content="2026-10-12-6">
 <title>Test Oposición · Técnico de Comunicación A2 · Ayto. Cartagena</title>
 <style>
   .plan-ritmo-card{background:linear-gradient(135deg, rgba(59,130,246,0.18), rgba(59,130,246,0.05));border:1px solid rgba(59,130,246,0.35);border-radius:14px;padding:16px;}
@@ -296,6 +296,14 @@
   .opcion.incorrecta .letra{background:var(--bad);color:#2b0b0b;border-color:var(--bad);}
   .opcion.locked{cursor:default;}
   .opcion.dim{opacity:0.55;}
+  #btn-voz.activo{border-color:var(--ok);color:var(--ok);background:var(--ok-bg);}
+  .voz-estado{display:flex;gap:10px;align-items:flex-start;margin:0 0 12px;padding:10px 12px;border:1px solid var(--ok);background:var(--ok-bg);border-radius:10px;font-size:0.9rem;line-height:1.35;}
+  .voz-estado.aviso{border-color:var(--bad);background:var(--bad-bg);}
+  .voz-estado .voz-punto{flex:none;width:12px;height:12px;border-radius:50%;background:var(--ok);margin-top:4px;animation:vozPulso 1.6s ease-in-out infinite;}
+  .voz-estado.aviso .voz-punto{background:var(--bad);animation:none;}
+  .voz-estado .voz-oido{opacity:0.8;font-size:0.84rem;margin-top:2px;}
+  @keyframes vozPulso{0%,100%{opacity:1;transform:scale(1);}50%{opacity:0.4;transform:scale(0.8);}}
+  @media (prefers-reduced-motion: reduce){.voz-estado .voz-punto{animation:none;}}
   .hint-teclado{font-size:0.72rem;color:var(--text-dim);margin:10px 0 0;}
 
   .feedback{
@@ -403,6 +411,62 @@
   select, input[type=number], input[type=text], input[type=search], textarea{font-size:16px;}
   input[type=search]{width:100%;height:auto;box-sizing:border-box;}
   @media (pointer:coarse){ .btn-sm{min-height:40px;} }
+
+  /* ===== Mapa del temario (carta de navegación) y bitácora semanal ===== */
+  .mapa-carta{position:relative;border-radius:16px;padding:6px 14px 20px;border:1px solid var(--border);
+    background:
+      linear-gradient(rgba(122,162,255,.055) 1px, transparent 1px) 0 0/100% 36px,
+      linear-gradient(90deg, rgba(122,162,255,.055) 1px, transparent 1px) 0 0/36px 100%,
+      radial-gradient(120% 80% at 15% 0%, #172944 0%, #0f1420 72%);}
+  .mapa-region{margin-top:20px;}
+  .mapa-region-cab{display:flex;align-items:baseline;gap:10px;}
+  .mapa-region-cab h3{margin:0;font:italic 600 1.2rem/1.2 Georgia,'Iowan Old Style','Palatino Linotype',serif;color:#ece3c8;letter-spacing:.01em;white-space:nowrap;}
+  .mapa-region-cab small{font-size:.74rem;color:var(--text-dim);white-space:nowrap;}
+  .mapa-region-cab i{flex:1;border-top:1px solid rgba(236,227,200,.22);transform:translateY(-4px);}
+  .mapa-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:14px 6px;margin-top:12px;}
+  .mapa-tile{background:none;border:0;color:var(--text);display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;padding:6px 2px;border-radius:12px;position:relative;font-family:inherit;}
+  .mapa-tile:focus-visible{outline:2px solid var(--accent-2);outline-offset:2px;}
+  .mapa-tile.sel{background:rgba(255,255,255,.07);}
+  .mapa-anillo{--c:#3fc7b5;--p:0%;width:60px;height:60px;border-radius:50%;box-sizing:border-box;background:conic-gradient(var(--c) var(--p), rgba(255,255,255,.09) 0);display:grid;place-items:center;transition:transform .15s;}
+  .mapa-tile:hover .mapa-anillo{transform:scale(1.06);}
+  .mapa-centro{width:48px;height:48px;border-radius:50%;background:#111a2c;display:grid;place-items:center;font:600 .84rem Georgia,'Iowan Old Style',serif;color:var(--text);}
+  .est-flojo .mapa-anillo{--c:#ff7f6e;}
+  .est-dominado .mapa-anillo{--c:#f1c15d;box-shadow:0 0 16px rgba(241,193,93,.38);}
+  .est-dominado .mapa-centro{color:#f6d98f;}
+  .est-virgen .mapa-anillo{background:none;border:2px dashed #3d4c6e;}
+  .est-virgen .mapa-centro{background:transparent;color:#5b6b8e;}
+  .mapa-cap{font-size:.7rem;line-height:1.2;color:var(--text-dim);text-align:center;max-width:84px;}
+  .mapa-corona{position:absolute;top:-3px;right:10px;font-size:1.05rem;filter:drop-shadow(0 1px 2px rgba(0,0,0,.7));}
+  .mapa-leyenda{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:14px;font-size:.74rem;color:var(--text-dim);}
+  .mapa-leyenda span::before{content:'';display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px;background:var(--c);}
+  .mapa-detalle{margin-top:16px;border-radius:12px;padding:14px 16px;background:rgba(17,26,44,.92);border:1px solid var(--border);border-left:3px solid var(--c,#3fc7b5);}
+  .mapa-detalle h4{margin:0 0 4px;font:italic 600 1.05rem/1.3 Georgia,'Iowan Old Style',serif;color:#ece3c8;}
+  .mapa-detalle p{margin:4px 0;font-size:.82rem;color:var(--text-dim);line-height:1.45;}
+  .mapa-detalle .acciones{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+  .jefe-banner{border-radius:12px;padding:14px 16px;margin:10px 0;border:1px solid rgba(241,193,93,.5);background:linear-gradient(135deg, rgba(241,193,93,.16), rgba(241,193,93,.04));text-align:center;}
+  .jefe-banner.pierde{border-color:rgba(255,127,110,.5);background:linear-gradient(135deg, rgba(255,127,110,.14), rgba(255,127,110,.03));}
+  .jefe-banner strong{display:block;font:italic 600 1.15rem Georgia,'Iowan Old Style',serif;margin-bottom:4px;}
+  .bit-card{border-radius:14px;padding:16px;border:1px solid var(--border);background:radial-gradient(120% 90% at 0% 0%, #172944 0%, #121a2b 70%);margin-top:10px;}
+  .bit-cab{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .bit-cab .t{font:italic 600 1.05rem Georgia,'Iowan Old Style',serif;color:#ece3c8;}
+  .bit-nav{display:flex;gap:6px;}
+  .bit-nav button{min-width:38px;}
+  .bit-frase{font:500 1.12rem/1.5 Georgia,'Iowan Old Style','Palatino Linotype',serif;margin:12px 0 4px;max-width:34em;}
+  .bit-frase b{color:#f6d98f;font-weight:700;}
+  .bit-delta{font-size:.8rem;color:var(--text-dim);margin:0 0 10px;}
+  .bit-mareas{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:8px;}
+  .bit-col{display:flex;flex-direction:column;align-items:center;gap:3px;}
+  .bit-pista{position:relative;width:100%;height:96px;display:flex;align-items:flex-end;justify-content:center;}
+  .bit-barra{width:100%;max-width:34px;border-radius:8px 8px 3px 3px;background:linear-gradient(180deg,#3fc7b5,#1d6f8a);min-height:2px;}
+  .bit-barra.cero{background:rgba(255,255,255,.1);}
+  .bit-obj{position:absolute;left:4px;right:4px;border-top:1.5px dashed rgba(241,193,93,.75);}
+  .bit-n{font-size:.7rem;color:var(--text-dim);}
+  .bit-d{font-size:.72rem;font-weight:600;}
+  .bit-col.hoy .bit-d{color:#f6d98f;}
+  .bit-lineas{margin-top:12px;display:grid;gap:4px;font-size:.82rem;}
+  .bit-lineas div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px dotted rgba(255,255,255,.1);padding-bottom:3px;}
+  .bit-lineas span:first-child{color:var(--text-dim);}
+  @media (prefers-reduced-motion:reduce){ .mapa-anillo{transition:none;} .mapa-tile:hover .mapa-anillo{transform:none;} }
 </style>
 </head>
 <body>
@@ -412,11 +476,16 @@
     <h1>📘 Test Oposición — Técnico de Comunicación A2</h1>
     <p>Ayuntamiento de Cartagena · Banco de preguntas por temática</p>
     <button class="btn btn-ghost btn-sm" id="btn-abrir-plan" style="margin-top:8px;">📅 Mi plan de estudio</button>
+    <button class="btn btn-ghost btn-sm" id="btn-abrir-mapa" style="margin-top:8px;">🗺️ Mapa del temario</button>
   </header>
 
   <!-- ============ PANTALLA 1: CONFIGURACIÓN ============ -->
   <section id="pantalla-config" class="card stack">
     <div id="banner-resume" class="hidden" style="background:rgba(255,193,7,0.12);border:1px solid rgba(255,193,7,0.4);border-radius:10px;padding:12px 14px;flex-direction:column;gap:8px;"></div>
+    <div id="sesion-hoy-card" style="background:linear-gradient(135deg, rgba(99,102,241,0.20), rgba(99,102,241,0.06));border:1px solid rgba(99,102,241,0.4);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;">
+      <button class="btn btn-primary" id="btn-sesion-hoy">⭐ Mi sesión de hoy</button>
+      <span id="sesion-hoy-detalle" style="font-size:0.78rem;color:var(--text-dim);line-height:1.4;"></span>
+    </div>
     <div class="stack" style="gap:10px;">
       <div class="row between">
         <strong style="font-size:0.95rem;">Elige temática(s)</strong>
@@ -536,12 +605,19 @@
 
     <div class="row between" style="align-items:center;margin-bottom:12px;">
       <span class="tema-tag" id="pregunta-tema">TEMA</span>
-      <button class="btn btn-ghost btn-sm" id="btn-fav" title="Marcar/desmarcar como favorita para repasarla más tarde">☆</button>
+      <span class="row" style="gap:6px;">
+        <button class="btn btn-ghost btn-sm" id="btn-voz" type="button" aria-pressed="false" title="Modo manos libres: responde diciendo «respuesta A», «siguiente»…">🎙️ Voz</button>
+        <button class="btn btn-ghost btn-sm" id="btn-fav" title="Marcar/desmarcar como favorita para repasarla más tarde">☆</button>
+      </span>
+    </div>
+    <div class="voz-estado hidden" id="voz-estado" role="status" aria-live="polite">
+      <span class="voz-punto" aria-hidden="true"></span>
+      <div><div id="voz-titulo"></div><div class="voz-oido" id="voz-oido"></div></div>
     </div>
     <p class="pregunta-texto" id="pregunta-texto"></p>
 
     <div class="opciones" id="opciones-container"></div>
-    <p class="hint-teclado">Atajos de teclado: 1-4 o A-D para responder · Enter / → para continuar · Esc para salir</p>
+    <p class="hint-teclado">Atajos de teclado: 1-4 o A-D para responder · Enter / → para continuar · Esc para salir<br>Modo voz (🎙️): di «respuesta A» (o B, C, D), «siguiente», «anterior» o «parar»</p>
 
     <div class="feedback" id="feedback-box">
       <div class="titulo" id="feedback-titulo"></div>
@@ -574,6 +650,7 @@
       <p class="resultado-num" id="resultado-porcentaje">0%</p>
       <p class="resultado-sub" id="resultado-detalle">0 de 0 correctas</p>
     </div>
+    <div id="resultado-jefe" class="hidden"></div>
     <div class="resumen-grid">
       <div class="resumen-item"><div class="n" id="res-correctas" style="color:var(--ok);">0</div><div class="l">Correctas</div></div>
       <div class="resumen-item"><div class="n" id="res-falladas" style="color:var(--bad);">0</div><div class="l">Falladas</div></div>
@@ -591,6 +668,17 @@
         <button class="btn btn-primary hidden" id="btn-repasar-falladas">🔁 Repasar falladas</button>
       </div>
     </div>
+  </section>
+
+  <!-- ============ PANTALLA 5: MAPA DEL TEMARIO ============ -->
+  <section id="pantalla-mapa" class="card stack hidden">
+    <div class="row between">
+      <strong style="font-size:1.05rem;">🗺️ Mapa del temario</strong>
+      <button class="btn btn-ghost btn-sm" id="btn-mapa-volver">← Volver</button>
+    </div>
+    <div id="mapa-resumen" style="font-size:.85rem;color:var(--text-dim);line-height:1.5;"></div>
+    <div id="mapa-carta" class="mapa-carta"></div>
+    <div id="mapa-detalle"></div>
   </section>
 
   <!-- ============ PANTALLA 4: MI PLAN DE ESTUDIO ============ -->
@@ -723,10 +811,13 @@
     var i = e.intentos, a = e.aciertos;
     var mal = !isFinite(i) || !isFinite(a) || i > 25 || i < 0 || a < 0 || a > i;
     if(!mal) return e;
+    var ult = e.ult || 0;
     var ratio = (isFinite(i) && isFinite(a) && i > 0) ? Math.min(1, Math.max(0, a / i)) : 0.75;
     var fc = (falladasDB[id] && falladasDB[id].failCount) || 0;
     var ni = Math.max(1, fc + 1);
-    return { intentos: ni, aciertos: Math.min(ni, Math.round(ratio * ni)) };
+    var res = { intentos: ni, aciertos: Math.min(ni, Math.round(ratio * ni)) };
+    if(ult) res.ult = ult;
+    return res;
   }
   function sanearStatsLocales(){
     var cambio = false;
@@ -763,15 +854,19 @@
       var i = sanearEntradaStat(id, inc[id]); if(!i) return;
       var loc = statsDB[id];
       if(!loc || i.intentos > loc.intentos || (i.intentos === loc.intentos && i.aciertos > loc.aciertos)){
+        var ultMax = Math.max(i.ult || 0, (loc && loc.ult) || 0);
         statsDB[id] = { intentos: i.intentos || 0, aciertos: i.aciertos || 0 };
+        if(ultMax) statsDB[id].ult = ultMax;
         nuevas++;
+      } else if((i.ult || 0) > (loc.ult || 0)){
+        loc.ult = i.ult; // misma o menos cuenta, pero la otra copia la respondió más recientemente
       }
     });
     Object.keys(statsDB).forEach(function(id){
       var l = statsDB[id], i = (inc || {})[id];
       if(!i){ diverge = true; return; }
       var si = sanearEntradaStat(id, i);
-      if(si.intentos !== l.intentos || si.aciertos !== l.aciertos || si !== i) diverge = true;
+      if(si.intentos !== l.intentos || si.aciertos !== l.aciertos || si !== i || (si.ult || 0) !== (l.ult || 0)) diverge = true;
     });
     guardarStats();
     return { diverge: diverge, nuevas: nuevas };
@@ -872,6 +967,7 @@
     if(!statsDB[id]) statsDB[id] = {intentos:0, aciertos:0};
     statsDB[id].intentos += 1;
     if(acierto) statsDB[id].aciertos += 1;
+    statsDB[id].ult = Date.now(); // última vez que respondiste esta pregunta (desempata en "Menos practicadas")
     guardarStats();
 
     registrarPreguntaHoy();
@@ -1010,6 +1106,79 @@
     selCantidad.appendChild(oTodas);
   }
 
+  // Orden de "menos practicadas": menos intentos primero; con los mismos intentos, la que hace más tiempo que
+  // respondiste (sin fecha registrada = más antigua); con todo igual, al azar.
+  function ordenarMenosPracticadas(lista){
+    return barajar(lista).sort(function(a, b){
+      var sa = statsDB[a.id] || {}, sb = statsDB[b.id] || {};
+      var ia = sa.intentos || 0, ib = sb.intentos || 0;
+      if(ia !== ib) return ia - ib;
+      return (sa.ult || 0) - (sb.ult || 0);
+    });
+  }
+
+  // ---------- Mi sesión de hoy ----------
+  // Un solo botón que compone el test del día: ~40 % falladas vivas, ~20 % de temas flojos y el resto
+  // (~40 %, más lo que falte de las otras dos partes) de las menos practicadas. Se mezcla todo.
+  var SESION_HOY_MIN = 20, SESION_HOY_MAX = 100;
+  var sesionHoyActiva = false, sesionHoyPendiente = false;
+  var jefeActivo = null, jefePendiente = null; // jefe de tema en curso: {tema, N, necesarias}
+  function objetivoDeHoy(){ return objetivoParaFecha(fechaISO(new Date())); }
+  function componerSesionHoy(){
+    var sel = ALL_QUESTIONS.filter(function(q){ return temasSeleccionados[q.tema]; });
+    if(!sel.length) return null;
+    var objetivo = objetivoDeHoy();
+    var hechas = 0;
+    try { hechas = sumarValoresObjeto(cargarJSON(DIARIO_KEY, {})[fechaISO(new Date())]); } catch(e){}
+    var restante = (objetivo === null) ? 50 : (objetivo - hechas);
+    var N = Math.round(restante / 10) * 10;
+    if(!isFinite(N)) N = 50;
+    N = Math.max(SESION_HOY_MIN, Math.min(SESION_HOY_MAX, N));
+    N = Math.min(N, sel.length);
+    var nF = Math.round(0.4 * N), nT = Math.round(0.2 * N);
+    var usadas = {}, lista = [];
+    function tomar(candidatas, max){
+      var tomadas = 0;
+      for(var i = 0; i < candidatas.length && tomadas < max && lista.length < N; i++){
+        if(usadas[candidatas[i].id]) continue;
+        usadas[candidatas[i].id] = true; lista.push(candidatas[i]); tomadas++;
+      }
+      return tomadas;
+    }
+    // 1) falladas vivas: primero las que más has fallado y, a igualdad, las más antiguas
+    var vivas = {}; idsFalladas().forEach(function(id){ vivas[id] = true; });
+    var fall = sel.filter(function(q){ return vivas[q.id]; }).sort(function(a, b){
+      var fa = falladasDB[a.id], fb = falladasDB[b.id];
+      if((fb.failCount || 0) !== (fa.failCount || 0)) return (fb.failCount || 0) - (fa.failCount || 0);
+      return (fa.ts || 0) - (fb.ts || 0);
+    });
+    var cF = tomar(fall, nF);
+    // 2) temas flojos (menos practicadas dentro de ellos)
+    var flojos = {}; calcularTemasFlojos().slice(0, 3).forEach(function(f){ flojos[f.tema] = true; }); // los 3 más flojos
+    var cT = tomar(ordenarMenosPracticadas(sel.filter(function(q){ return flojos[q.tema]; })), nT);
+    // 3) el resto, menos practicadas
+    var cP = tomar(ordenarMenosPracticadas(sel), N);
+    return { lista: barajar(lista), n: lista.length, falladas: cF, flojos: cT, poco: cP, objetivo: objetivo, hechas: hechas };
+  }
+  function refrescarSesionHoy(){
+    var det = document.getElementById('sesion-hoy-detalle'), btn = document.getElementById('btn-sesion-hoy');
+    if(!det || !btn) return;
+    var c = componerSesionHoy();
+    if(!c || !c.n){ btn.disabled = true; det.textContent = 'Elige al menos una temática para componer tu sesión.'; return; }
+    btn.disabled = false;
+    btn.textContent = '⭐ Mi sesión de hoy (' + c.n + ' preguntas)';
+    det.textContent = c.falladas + ' falladas · ' + c.flojos + ' de temas flojos · ' + c.poco + ' menos practicadas, todo mezclado.' +
+      (c.objetivo !== null ? ' Objetivo de hoy: ' + c.objetivo + ' (llevas ' + c.hechas + ').' : '');
+  }
+  document.getElementById('btn-sesion-hoy').addEventListener('click', function(){
+    var c = componerSesionHoy();
+    if(!c || !c.n) return;
+    modoActual = 'pocopracticadas';
+    modeBtns.forEach(function(b){ b.classList.toggle('active', b.dataset.mode === 'pocopracticadas'); });
+    sesionHoyPendiente = true;
+    iniciarQuizConPreguntas(c.lista);
+  });
+
   function preguntasDisponiblesActuales(){
     var base = ALL_QUESTIONS.filter(function(q){ return temasSeleccionados[q.tema]; });
     if(modoActual === 'falladas'){
@@ -1022,12 +1191,8 @@
       base = base.filter(function(q){ return idsFav.indexOf(q.id) !== -1; });
     } else if(modoActual === 'pocopracticadas'){
       // Las que nunca has respondido primero, luego las de menos a más intentos.
-      // Entre preguntas con el mismo nº de intentos, el orden se mezcla para no ver siempre las mismas primero.
-      base = barajar(base).sort(function(a, b){
-        var ia = (statsDB[a.id] && statsDB[a.id].intentos) || 0;
-        var ib = (statsDB[b.id] && statsDB[b.id].intentos) || 0;
-        return ia - ib;
-      });
+      // Entre preguntas con mismo nº de intentos y misma antigüedad (p. ej. sin fecha), el orden se mezcla.
+      base = ordenarMenosPracticadas(base);
     }
     return base;
   }
@@ -1038,6 +1203,7 @@
     refrescarModoFavoritas();
     refrescarModoPocoPracticadas();
     refrescarNotas();
+    refrescarSesionHoy();
     var disponibles = preguntasDisponiblesActuales();
     poblarSelectCantidad(disponibles.length || 0);
     var resumenEl = document.getElementById('resumen-seleccion');
@@ -1196,12 +1362,14 @@
     // Usamos un hash corto en vez de concatenar los nombres completos: con selecciones grandes
     // (p. ej. los 48 temas de la parte específica a la vez) la clave podía superar el límite de
     // longitud de un nombre de campo en Firestore y hacer fallar toda la sincronización.
+    if(jefeActivo) return 'jefe::' + hashCorto(jefeActivo.tema);
     return modoActual + '::' + hashCorto(temasElegidos.join('|')) + '::' + temasElegidos.length;
   }
   function etiquetaSesionActual(){
     var temasElegidos = Object.keys(temasSeleccionados).filter(function(t){ return temasSeleccionados[t]; });
     var nombreModo = modoActual === 'falladas' ? 'Repaso de falladas' : modoActual === 'revisar' ? 'Dudosas' : modoActual === 'favoritas' ? 'Favoritas' : 'Test normal';
     var nombreTemas = temasElegidos.length === 1 ? temasElegidos[0] : (temasElegidos.length ? (temasElegidos.length + ' temas seleccionados') : 'sin tema');
+    if(jefeActivo) return '👑 Jefe · ' + etiquetaCortaTema(jefeActivo.tema);
     return nombreModo + ' · ' + nombreTemas;
   }
   function guardarSesionQuiz(){
@@ -1217,6 +1385,7 @@
       cronoActivo: cronoActivo,
       cronoSegundos: cronoSegundos,
       modo: modoActual,
+      jefe: jefeActivo ? { tema: jefeActivo.tema, N: jefeActivo.N, necesarias: jefeActivo.necesarias } : null,
       etiqueta: sesionActualEtiqueta,
       ts: Date.now()
     };
@@ -1260,6 +1429,7 @@
   }
   function reanudarSesionQuiz(clave, datos){
     sesionActualClave = clave;
+    jefeActivo = datos.jefe || null; sesionHoyActiva = false;
     sesionActualEtiqueta = datos.etiqueta || '';
     quizPreguntas = datos.ids.map(function(id){ return QUESTIONS_BY_ID[id]; });
     quizIndice = datos.indice;
@@ -1324,6 +1494,8 @@
 
   function iniciarQuizConPreguntas(lista){
     if(!lista || !lista.length) return; // nada que mostrar: no arrancar un test vacío
+    sesionHoyActiva = sesionHoyPendiente; sesionHoyPendiente = false;
+    jefeActivo = jefePendiente; jefePendiente = null;
     quizPreguntas = lista;
     quizIndice = 0;
     maxIndiceAlcanzado = 0;
@@ -1347,6 +1519,7 @@
   }
 
   document.getElementById('btn-empezar').addEventListener('click', function(){
+    sesionHoyActiva = false;
     var disponibles = preguntasDisponiblesActuales();
     var orden = document.getElementById('sel-orden').value;
     var cantidadVal = selCantidad.value;
@@ -1599,11 +1772,14 @@
       total: total,
       correctas: correctas,
       pct: pct,
-      modo: (modoActual === 'falladas' ? 'Repaso de falladas' : modoActual === 'revisar' ? 'Dudosas' : modoActual === 'favoritas' ? 'Favoritas' : 'Test normal'),
+      modo: (jefeActivo ? 'Jefe de tema' : sesionHoyActiva ? 'Sesión de hoy' : modoActual === 'falladas' ? 'Repaso de falladas' : modoActual === 'revisar' ? 'Dudosas' : modoActual === 'favoritas' ? 'Favoritas' : 'Test normal'),
       segundos: cronoActivo ? cronoSegundos : null
     });
 
     ultimoQuizPreguntas = quizPreguntas.slice();
+    var elJefe = document.getElementById('resultado-jefe');
+    elJefe.classList.add('hidden'); elJefe.innerHTML = '';
+    if(jefeActivo){ resolverJefe(jefeActivo, correctas, total); jefeActivo = null; }
   }
 
   document.getElementById('btn-menu').addEventListener('click', function(){
@@ -1658,7 +1834,10 @@
       favoritos: favoritosDB,
       historial: historialDB,
       notas: notasDB,
-      agenda: agendaDB
+      agenda: agendaDB,
+      diarioAciertos: cargarJSON(DIARIO_ACIERTOS_KEY, {}),
+      cierresCiclo: cargarCierres(),
+      jefes: jefesDB
     };
     var blob = new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'});
     var url = URL.createObjectURL(blob);
@@ -1728,6 +1907,8 @@
 
     fusionarNotas(datos.notas);
     fusionarAgenda(datos.agenda);
+    fusionarCierres(datos.cierresCiclo);
+    fusionarJefes(datos.jefes);
 
     if(datos.diarioAciertos){
       var diarioAciertosLocal = cargarJSON(DIARIO_ACIERTOS_KEY, {});
@@ -1826,11 +2007,183 @@
     }
   });
 
+  // ---------- Modo manos libres por voz ----------
+  // Pulsas 🎙️ Voz y la app escucha: "respuesta A/B/C/D", "siguiente", "anterior", "parar".
+  // Solo actúa con la palabra "respuesta" delante de la letra, para no contestar por error
+  // si oye una conversación o la tele. No lee nada en voz alta; solo escucha.
+  var vozActiva = false, vozRec = null, vozEscuchando = false, vozHecho = {}, vozTimers = {};
+  var vozWake = null, vozVigia = null, vozUltimoInicio = 0;
+  var VOZ_LETRAS = {
+    a:'A', ah:'A', ha:'A', alfa:'A', uno:'A', '1':'A',
+    b:'B', be:'B', ve:'B', uve:'B', bravo:'B', dos:'B', '2':'B',
+    c:'C', ce:'C', se:'C', ze:'C', charlie:'C', tres:'C', '3':'C',
+    d:'D', de:'D', delta:'D', cuatro:'D', '4':'D'
+  };
+  function vozSoportada(){ return !!(window.SpeechRecognition || window.webkitSpeechRecognition); }
+  function vozNormalizar(t){
+    var x = String(t||'').toLowerCase();
+    try { x = x.normalize('NFD').replace(/[̀-ͯ]/g,''); } catch(e){}
+    return x.replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
+  }
+  function vozExtraer(texto){
+    var t = vozNormalizar(texto), out = [], m;
+    var re = /\brespuestas?\s+(?:la\s+|letra\s+|opcion\s+|es\s+la\s+)?([a-z0-9]+)|\b(siguiente|siguientes|next|continuar|adelante)\b|\b(anterior|atras)\b|\b(parar|stop|detener|detente)\b/g;
+    while((m = re.exec(t)) !== null){
+      if(m[1] !== undefined) out.push({ tipo:'resp', token:m[1], letra:VOZ_LETRAS[m[1]] || null });
+      else if(m[2]) out.push({ tipo:'sig' });
+      else if(m[3]) out.push({ tipo:'ant' });
+      else out.push({ tipo:'parar' });
+    }
+    return out;
+  }
+  function vozPintar(titulo, oido, aviso){
+    var box = document.getElementById('voz-estado');
+    if(!box) return;
+    box.classList.remove('hidden');
+    box.classList.toggle('aviso', !!aviso);
+    if(titulo !== null && titulo !== undefined) document.getElementById('voz-titulo').textContent = titulo;
+    if(oido !== null && oido !== undefined) document.getElementById('voz-oido').textContent = oido;
+  }
+  function vozTituloEscuchando(){ return '🎙️ Escuchando — di «respuesta A», «siguiente»…'; }
+  function vozEjecutar(c){
+    if(c.tipo === 'resp'){
+      if(!c.letra) return '❓ No he entendido la letra («' + c.token + '»)';
+      if(respuestaBloqueada) return 'Ya está respondida — di «siguiente»';
+      var q = quizPreguntas[quizIndice];
+      if(!q || !q.opciones[c.letra]) return '❓ Esta pregunta no tiene la opción ' + c.letra;
+      var btn = botonPorLetra(c.letra);
+      if(!btn) return '❓ No encuentro la opción ' + c.letra;
+      seleccionarRespuesta(c.letra, btn);
+      var r = quizRespuestas[quizIndice];
+      return (r && r.acierto) ? '✅ Respuesta ' + c.letra + ' — correcta' : '❌ Respuesta ' + c.letra + ' — la correcta es ' + q.correcta;
+    }
+    if(c.tipo === 'sig'){
+      var bs = document.getElementById('btn-siguiente');
+      if(!bs || bs.disabled) return 'Responde primero con «respuesta A…»';
+      bs.click();
+      return '→ Siguiente';
+    }
+    if(c.tipo === 'ant'){
+      var ba = document.getElementById('btn-anterior');
+      if(!ba || ba.disabled) return 'No hay pregunta anterior';
+      ba.click();
+      return '← Anterior';
+    }
+    if(c.tipo === 'parar'){ vozParar(); return ''; }
+    return '';
+  }
+  function vozProcesar(idx, texto){
+    if(!vozActiva) return;
+    var quizVisible = !document.getElementById('pantalla-quiz').classList.contains('hidden');
+    if(!quizVisible){ vozParar(); return; }
+    var cmds = vozExtraer(texto), ya = vozHecho[idx] || 0, ultimo = null;
+    for(var i = ya; i < cmds.length && vozActiva; i++){ ultimo = vozEjecutar(cmds[i]); }
+    vozHecho[idx] = Math.max(ya, cmds.length);
+    if(vozActiva){
+      if(ultimo) vozPintar(vozTituloEscuchando(), 'Oído: «' + texto.trim() + '» → ' + ultimo, /^❓|^Responde|^Ya está|^No hay/.test(ultimo));
+      else vozPintar(vozTituloEscuchando(), 'Oído: «' + texto.trim() + '»', false);
+    }
+  }
+  function vozArrancar(){
+    if(!vozActiva || !vozRec || vozEscuchando) return;
+    vozUltimoInicio = Date.now();
+    try { vozRec.start(); } catch(e){ /* ya estaba arrancado */ }
+  }
+  function vozPedirPantalla(){
+    try {
+      if(navigator.wakeLock && vozActiva && !vozWake && document.visibilityState === 'visible'){
+        navigator.wakeLock.request('screen').then(function(l){
+          vozWake = l;
+          l.addEventListener('release', function(){ vozWake = null; });
+        }).catch(function(){});
+      }
+    } catch(e){}
+  }
+  function vozParar(mensaje){
+    vozActiva = false;
+    clearInterval(vozVigia); vozVigia = null;
+    Object.keys(vozTimers).forEach(function(k){ clearTimeout(vozTimers[k]); });
+    vozTimers = {};
+    if(vozRec){ try { vozRec.onend = null; vozRec.abort(); } catch(e){} }
+    vozRec = null; vozEscuchando = false; vozHecho = {};
+    try { if(vozWake) vozWake.release(); } catch(e){}
+    vozWake = null;
+    var b = document.getElementById('btn-voz');
+    if(b){ b.classList.remove('activo'); b.setAttribute('aria-pressed','false'); b.textContent = '🎙️ Voz'; }
+    if(mensaje) vozPintar(mensaje, '', true);
+    else { var box = document.getElementById('voz-estado'); if(box) box.classList.add('hidden'); }
+  }
+  function vozEncender(){
+    if(!vozSoportada()){
+      vozPintar('Este navegador no permite reconocimiento de voz. Prueba a abrir la app desde Safari (iPhone) o Chrome.', '', true);
+      return;
+    }
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    vozRec = new SR();
+    vozRec.lang = 'es-ES';
+    vozRec.continuous = true;
+    vozRec.interimResults = true;
+    vozRec.maxAlternatives = 1;
+    vozRec.onstart = function(){ vozEscuchando = true; vozHecho = {}; };
+    vozRec.onresult = function(e){
+      for(var i = e.resultIndex; i < e.results.length; i++){
+        (function(i){
+          var r = e.results[i], txt = r[0].transcript;
+          clearTimeout(vozTimers[i]);
+          if(r.isFinal) vozProcesar(i, txt);
+          else {
+            vozPintar(vozTituloEscuchando(), 'Oyendo: «' + txt.trim() + '»', false);
+            vozTimers[i] = setTimeout(function(){ vozProcesar(i, txt); }, 900);
+          }
+        })(i);
+      }
+    };
+    vozRec.onerror = function(e){
+      if(e.error === 'not-allowed' || e.error === 'service-not-allowed'){
+        vozParar('No tengo permiso para usar el micrófono. Actívalo en los ajustes del navegador y vuelve a pulsar 🎙️ Voz.');
+      } else if(e.error === 'audio-capture'){
+        vozParar('No detecto ningún micrófono.');
+      } else if(e.error === 'network'){
+        vozPintar('Sin conexión para el reconocimiento de voz — reintentando…', '', true);
+      }
+    };
+    vozRec.onend = function(){
+      vozEscuchando = false;
+      Object.keys(vozTimers).forEach(function(k){ clearTimeout(vozTimers[k]); });
+      vozTimers = {};
+      if(vozActiva){
+        var espera = (Date.now() - vozUltimoInicio < 1000) ? 1500 : 250;
+        setTimeout(vozArrancar, espera);
+      }
+    };
+    vozActiva = true;
+    var b = document.getElementById('btn-voz');
+    b.classList.add('activo'); b.setAttribute('aria-pressed','true'); b.textContent = '🎙️ Voz ON';
+    vozPintar(vozTituloEscuchando(), 'Cuando oigas el aviso del navegador, permite el micrófono.', false);
+    vozPedirPantalla();
+    clearInterval(vozVigia);
+    vozVigia = setInterval(function(){
+      if(!vozActiva) return;
+      if(document.getElementById('pantalla-quiz').classList.contains('hidden')){ vozParar(); return; }
+      if(!vozEscuchando) vozArrancar();
+    }, 2500);
+    vozArrancar();
+  }
+  (function(){
+    var b = document.getElementById('btn-voz');
+    if(!b) return;
+    b.addEventListener('click', function(){ if(vozActiva) vozParar(); else vozEncender(); });
+    document.addEventListener('visibilitychange', function(){
+      if(vozActiva && document.visibilityState === 'visible'){ vozPedirPantalla(); if(!vozEscuchando) vozArrancar(); }
+    });
+  })();
+
   function mostrarPantalla(nombre){
-    ['config','quiz','resultados','plan'].forEach(function(p){
+    ['config','quiz','resultados','plan','mapa'].forEach(function(p){
       document.getElementById('pantalla-' + p).classList.toggle('hidden', p !== nombre);
     });
     window.scrollTo(0,0);
+    if(nombre !== 'quiz' && typeof vozActiva !== 'undefined' && vozActiva) vozParar();
     if(nombre === 'config' && typeof comprobarSesionGuardada === 'function') comprobarSesionGuardada(); // el aviso de "tests sin terminar" siempre al día
   }
 
@@ -1863,6 +2216,8 @@
         diario: cargarJSON(DIARIO_KEY, {}),
         diarioBloque: cargarJSON(DIARIO_BLOQUE_KEY, {}),
         diarioAciertos: cargarJSON(DIARIO_ACIERTOS_KEY, {}),
+        cierresCiclo: cargarCierres(),
+        jefes: jefesDB,
         sesiones: sesionesSeguras(cargarJSON(SESIONES_KEY, {})),
         planInicio: planInicio
       };
@@ -1913,6 +2268,8 @@
         });
         guardarJSON(DIARIO_ACIERTOS_KEY, diarioAciertosLocalSS);
       }
+      if(nuevo.cierresCiclo) fusionarCierres(nuevo.cierresCiclo);
+      if(nuevo.jefes) fusionarJefes(nuevo.jefes);
       if(nuevo.sesiones){
         var sesionesLocales = cargarJSON(SESIONES_KEY, {});
         Object.keys(nuevo.sesiones).forEach(function(k){
@@ -2029,6 +2386,34 @@
       acc.total += tt;
       acc.aciertos += Math.min(tt, a[dev] || 0);
     });
+  }
+
+  // ---- Cierre fijo del % de acierto de cada ciclo de 21 días ----
+  // Un ciclo terminado guarda su acierto como foto (no cambia más). Para dar tiempo a que lleguen aciertos
+  // de otros dispositivos, la foto se toma CIERRES_GRACIA_DIAS días después de cerrar el ciclo
+  // (o después del día en que se estrenó esta función, para los ciclos que ya estaban cerrados).
+  var CIERRES_KEY = 'oposicion_cartagena_cierres_ciclo_v1';
+  var CIERRES_GRACIA_DIAS = 3;
+  function cargarCierres(){
+    var c = cargarJSON(CIERRES_KEY, {});
+    if(!c || typeof c !== 'object' || Array.isArray(c)) c = {};
+    if(!c.c || typeof c.c !== 'object') c.c = {};
+    return c;
+  }
+  function guardarCierres(c){ guardarJSON(CIERRES_KEY, c); }
+  // Fusión: 'desde' = la fecha más antigua; de cada ciclo gana la foto más reciente (una corrección manual posterior gana).
+  function fusionarCierres(inc){
+    if(!inc || typeof inc !== 'object') return false;
+    var loc = cargarCierres(), cambio = false;
+    if(inc.desde && (!loc.desde || inc.desde < loc.desde)){ loc.desde = inc.desde; cambio = true; }
+    Object.keys(inc.c || {}).forEach(function(n){
+      var i = inc.c[n];
+      if(!i || typeof i.t !== 'number' || typeof i.a !== 'number') return;
+      var l = loc.c[n];
+      if(!l || (i.ts || 0) > (l.ts || 0)){ loc.c[n] = { t: i.t, a: i.a, ts: i.ts || 0, m: !!i.m }; cambio = true; }
+    });
+    if(cambio) guardarCierres(loc);
+    return cambio;
   }
 
   function registrarPreguntaHoy(){
@@ -2264,9 +2649,14 @@
   function renderCiclosChart(semanaInfo, totalGeneralGrande){
     var diario = cargarJSON(DIARIO_KEY, {});
     var aciertosDia = cargarJSON(DIARIO_ACIERTOS_KEY, {});
+    var cierres = cargarCierres();
+    var cierresCambio = false;
+    if(!cierres.desde){ cierres.desde = semanaInfo.hoy; cierresCambio = true; }
     var ciclos = [];
     for(var c0 = 0; c0 < semanaInfo.ciclo; c0++){
+      var n = c0 + 1;
       var ini = sumarDias(semanaInfo.inicio, c0 * CICLO_DIAS);
+      var fin = sumarDias(ini, CICLO_DIAS - 1);
       var total = 0, activos = 0, acc = { total: 0, aciertos: 0 };
       for(var d = 0; d < CICLO_DIAS; d++){
         var f = sumarDias(ini, d);
@@ -2274,23 +2664,62 @@
         var t = sumarValoresObjeto(diario[f]);
         if(t > 0){ activos++; total += t; acumularAcierto(acc, f, diario, aciertosDia); }
       }
-      ciclos.push({ n: c0 + 1, ini: ini, total: total, aciertos: acc.aciertos, totalAcierto: acc.total, activos: activos, enCurso: (c0 + 1 === semanaInfo.ciclo) });
+      var enCurso = (n === semanaInfo.ciclo);
+      var estado = 'vivo', tA = acc.total, aA = acc.aciertos, fechaFijado = null;
+      if(!enCurso){
+        var snap = cierres.c[n];
+        var base = (cierres.desde && cierres.desde > fin) ? cierres.desde : fin;
+        var limite = sumarDias(base, CIERRES_GRACIA_DIAS);
+        if(!snap && semanaInfo.hoy > limite){
+          snap = cierres.c[n] = { t: acc.total, a: acc.aciertos, ts: Date.now(), m: false };
+          cierresCambio = true;
+        }
+        if(snap){ estado = snap.m ? 'manual' : 'fijo'; tA = snap.t; aA = snap.a; }
+        else { estado = 'provisional'; fechaFijado = sumarDias(limite, 1); }
+      }
+      ciclos.push({ n: n, ini: ini, total: total, aciertos: aA, totalAcierto: tA, activos: activos, enCurso: enCurso, estado: estado, fechaFijado: fechaFijado });
     }
+    if(cierresCambio){ guardarCierres(cierres); avisarCambioLocal(); }
     var maximo = Math.max.apply(null, ciclos.map(function(x){ return x.total; }).concat([totalGeneralGrande || 1]));
-    var html = '<div class="plan-card" style="margin-top:10px;">' +
+    var html = '<div class="plan-card" id="plan-ciclos-card" style="margin-top:10px;">' +
       '<div class="plan-card-header"><span class="plan-card-nombre">📊 Preguntas por ciclo de ' + CICLO_DIAS + ' días</span></div>';
     ciclos.forEach(function(x){
       var pct = Math.round(100 * x.total / maximo);
       var media = x.activos ? Math.round(x.total / x.activos) : 0;
+      var accTxt;
+      if(x.totalAcierto > 0){
+        var p = Math.round(100 * x.aciertos / x.totalAcierto);
+        accTxt = ' · ' + (x.estado === 'fijo' || x.estado === 'manual' ? '🔒 ' : '') + 'acierto <b>' + p + '%</b> (' + x.aciertos + '/' + x.totalAcierto + ')' +
+          (x.estado === 'provisional' ? ' · se fija el ' + x.fechaFijado : '') +
+          (x.estado === 'manual' ? ' · corregido a mano' : '');
+      } else {
+        accTxt = ' · acierto —';
+      }
+      var corregir = (!x.enCurso) ? ' <span data-ciclo-corregir="' + x.n + '" style="cursor:pointer;text-decoration:underline;">corregir</span>' : '';
       html += '<div style="margin-top:8px;">' +
         '<div style="display:flex;justify-content:space-between;font-size:0.8rem;"><span>Ciclo ' + x.n + (x.enCurso ? ' · en curso' : '') + ' <span style="opacity:0.6;">(desde ' + x.ini + ')</span></span><b>' + x.total + '</b></div>' +
         barraHtml(pct, x.enCurso ? 'var(--accent)' : 'var(--ok)') +
-        '<div style="font-size:0.72rem;opacity:0.7;margin-top:2px;">' + x.activos + ' días con actividad · ~' + media + ' al día' +
-          (x.totalAcierto > 0 ? ' · acierto ' + Math.round(100 * x.aciertos / x.totalAcierto) + '%' : '') + '</div>' +
+        '<div style="font-size:0.72rem;opacity:0.7;margin-top:2px;">' + x.activos + ' días con actividad · ~' + media + ' al día' + accTxt + corregir + '</div>' +
         '</div>';
     });
-    html += '<div style="font-size:0.72rem;opacity:0.6;margin-top:8px;">La barra completa equivale al mayor entre tu mejor ciclo y una vuelta entera al banco (' + totalGeneralGrande + ').</div></div>';
+    html += '<div style="font-size:0.72rem;opacity:0.6;margin-top:8px;">Acierto = veces acertadas ÷ respuestas dadas en ese ciclo. El del ciclo en curso se va actualizando; al cerrarse un ciclo su porcentaje queda fijo.</div>' +
+      '<div style="font-size:0.72rem;opacity:0.6;margin-top:4px;">La barra completa equivale al mayor entre tu mejor ciclo y una vuelta entera al banco (' + totalGeneralGrande + ').</div></div>';
     return html;
+  }
+  function corregirCierreCiclo(n){
+    var cierres = cargarCierres();
+    var actual = cierres.c[n];
+    var t = prompt('Ciclo ' + n + ': ¿cuántas respuestas diste en total en ese ciclo?' + (actual ? ' (ahora: ' + actual.t + ')' : ''), actual ? String(actual.t) : '');
+    if(t === null) return;
+    var a = prompt('Ciclo ' + n + ': ¿cuántas de esas acertaste?' + (actual ? ' (ahora: ' + actual.a + ')' : ''), actual ? String(actual.a) : '');
+    if(a === null) return;
+    var tn = parseInt(t, 10), an = parseInt(a, 10);
+    if(isNaN(tn) || isNaN(an) || tn <= 0 || an < 0 || an > tn){ alert('Datos no válidos: el total debe ser mayor que 0 y los aciertos no pueden superar el total.'); return; }
+    if(!cierres.desde) cierres.desde = fechaISO(new Date());
+    cierres.c[n] = { t: tn, a: an, ts: Date.now(), m: true };
+    guardarCierres(cierres);
+    avisarCambioLocal();
+    renderPlan();
   }
   function renderResumenSemanal(semanaInfo){
     // Últimos 7 días con datos reales (hasta hoy), sumando todos los dispositivos.
@@ -2477,9 +2906,16 @@
         '<button class="btn btn-ghost btn-sm" id="btn-plan-fecha" style="margin-top:10px;">Cambiar fecha de inicio (' + semanaInfo.inicio + ')</button>' +
         renderCalendarioDias({ inicio: semanaInfo.inicioCiclo, dias: semanaInfo.diaEnCiclo, hoy: semanaInfo.hoy }, totalGeneralGrande) +
         renderResumenSemanal(semanaInfo) +
+        renderBitacoraSemana() +
         renderCiclosChart(semanaInfo, totalGeneralGrande) +
         renderAgenda(semanaInfo);
     }
+    Array.prototype.forEach.call(ritmoEl.querySelectorAll('[data-ciclo-corregir]'), function(b){
+      b.addEventListener('click', function(){ corregirCierreCiclo(parseInt(this.dataset.cicloCorregir, 10)); });
+    });
+    var bPrev = ritmoEl.querySelector('#bitacora-prev'), bNext = ritmoEl.querySelector('#bitacora-next');
+    if(bPrev) bPrev.addEventListener('click', function(){ bitacoraOffset--; renderPlan(); });
+    if(bNext) bNext.addEventListener('click', function(){ if(bitacoraOffset < 0){ bitacoraOffset++; renderPlan(); } });
     var btnAgenda = ritmoEl.querySelector('#btn-agenda-add');
     if(btnAgenda) btnAgenda.addEventListener('click', anadirDiaAgenda);
     Array.prototype.forEach.call(ritmoEl.querySelectorAll('[data-agenda-quitar]'), function(b){
@@ -2621,6 +3057,298 @@
     actualizarResumenSeleccion();
   });
 
+
+  // ---------- Mapa del temario + Jefes de tema ----------
+  var JEFES_KEY = 'oposicion_cartagena_jefes_v1';
+  var jefesDB = cargarJSON(JEFES_KEY, {}); // { tema: { g: fecha(ms) en que lo derrotaste (0 = aún no), m: mejor %, n: intentos, ts } }
+  function guardarJefes(){ guardarJSON(JEFES_KEY, jefesDB); }
+  function fusionarJefes(inc){
+    if(!inc || typeof inc !== 'object') return false;
+    var cambio = false;
+    Object.keys(inc).forEach(function(t){
+      var i = inc[t]; if(!i || typeof i !== 'object') return;
+      var l = jefesDB[t] || { g: 0, m: 0, n: 0, ts: 0 };
+      var nuevo = { g: Math.max(l.g || 0, i.g || 0), m: Math.max(l.m || 0, i.m || 0), n: Math.max(l.n || 0, i.n || 0), ts: Math.max(l.ts || 0, i.ts || 0) };
+      if(!jefesDB[t] || nuevo.g !== l.g || nuevo.m !== l.m || nuevo.n !== l.n || nuevo.ts !== l.ts){ jefesDB[t] = nuevo; cambio = true; }
+    });
+    if(cambio) guardarJefes();
+    return cambio;
+  }
+
+  var JEFE_MAX_PREGUNTAS = 20, JEFE_PORCENTAJE = 0.8;
+  var NUMEROS_ROMANOS = { I:1, II:2, III:3, IV:4, V:5, VI:6, VII:7, VIII:8, IX:9, X:10 };
+  function etiquetaCortaTema(t){
+    var m;
+    if((m = t.match(/^Específica · Tema (\d+)/))) return 'Tema ' + parseInt(m[1], 10);
+    if(t === 'TRLEBEP') return 'TREBEP';
+    if(t.indexOf('Ley 39/2015') === 0) return 'Ley 39/2015';
+    if(t.indexOf('Ley 40/2015') === 0) return 'Ley 40/2015';
+    if(t.indexOf('Ley 7/1985') === 0) return 'LBRL';
+    if(t.indexOf('Ley Orgánica 3/2007') === 0) return 'LO 3/2007';
+    if(t.indexOf('Ley 31/1995') === 0) return 'LPRL';
+    if(t.indexOf('Ley 19/2013') === 0) return 'Transparencia';
+    if(t.indexOf('Ley Orgánica 4/1982') === 0) return 'Estatuto de Murcia';
+    if(t.indexOf('Real Decreto 485/1997') === 0) return 'RD 485/1997';
+    if(t.indexOf('CE · ') === 0){
+      var r = t.slice(5);
+      if(/^Preámbulo/.test(r)) return 'Preámbulo';
+      if(/^Disposición final/.test(r)) return 'Disp. final';
+      if(/^Título Preliminar/.test(r)) return 'Tít. Preliminar';
+      var mm = r.match(/^Tít\. ([IVX]+)(?: Cap\. ([IVX]+))?(?: Sec\. (\d)ª)?/);
+      if(mm) return 'Tít. ' + mm[1] + (mm[2] ? ' · Cap. ' + mm[2] : '') + (mm[3] ? ' · Sec. ' + mm[3] : '');
+    }
+    return t.length > 24 ? t.slice(0, 23) + '…' : t;
+  }
+  function claveOrdenCE(t){
+    var r = t.slice(5);
+    if(/^Preámbulo/.test(r)) return [-1, 0, 0];
+    if(/^Título Preliminar/.test(r)) return [0, 0, 0];
+    if(/^Disposición final/.test(r)) return [99, 0, 0];
+    var mm = r.match(/^Tít\. ([IVX]+)(?: Cap\. ([IVX]+))?(?: Sec\. (\d)ª)?/);
+    if(!mm) return [50, 0, 0];
+    return [NUMEROS_ROMANOS[mm[1]] || 50, mm[2] ? (NUMEROS_ROMANOS[mm[2]] || 0) : 0, mm[3] ? parseInt(mm[3], 10) : 0];
+  }
+  var ORDEN_LEYES = ['TRLEBEP', 'Ley 39/2015', 'Ley 40/2015', 'Ley 7/1985', 'Ley Orgánica 3/2007', 'Ley 31/1995', 'Ley 19/2013', 'Ley Orgánica 4/1982', 'Real Decreto 485/1997'];
+  function gruposMapa(){
+    var ce = [], leyes = [], esp = [];
+    temas.forEach(function(t){
+      if(t.indexOf('CE · ') === 0) ce.push(t);
+      else if(t.indexOf('Específica') === 0) esp.push(t);
+      else leyes.push(t);
+    });
+    ce.sort(function(a, b){
+      var x = claveOrdenCE(a), y = claveOrdenCE(b);
+      for(var i = 0; i < 3; i++){ if(x[i] !== y[i]) return x[i] - y[i]; }
+      return 0;
+    });
+    esp.sort();
+    function posLey(t){ for(var i = 0; i < ORDEN_LEYES.length; i++){ if(t.indexOf(ORDEN_LEYES[i]) === 0) return i; } return 99; }
+    leyes.sort(function(a, b){ return posLey(a) - posLey(b); });
+    return [
+      { nombre: 'Constitución Española', sub: ce.length + ' temas', temas: ce },
+      { nombre: 'Leyes y normas', sub: leyes.length + ' temas', temas: leyes },
+      { nombre: 'Parte específica', sub: esp.length + ' temas', temas: esp }
+    ];
+  }
+  var IDS_POR_TEMA = null;
+  function idsDelTema(t){
+    if(!IDS_POR_TEMA){
+      IDS_POR_TEMA = {};
+      ALL_QUESTIONS.forEach(function(q){ (IDS_POR_TEMA[q.tema] = IDS_POR_TEMA[q.tema] || []).push(q.id); });
+    }
+    return IDS_POR_TEMA[t] || [];
+  }
+  // Estado de dominio de un tema: ring = cobertura (preguntas vistas) × acierto.
+  function estadoTema(t){
+    var ids = idsDelTema(t), n = ids.length, vistas = 0, intentos = 0, aciertos = 0, vivas = 0;
+    ids.forEach(function(id){
+      var s = statsDB[id];
+      if(s && s.intentos > 0){ vistas++; intentos += s.intentos; aciertos += s.aciertos; }
+      if(falladasDB[id] && falladasDB[id].lastFailed) vivas++;
+    });
+    var cobertura = n ? vistas / n : 0, acierto = intentos ? Math.min(1, aciertos / intentos) : 0, dominio = cobertura * acierto;
+    var estado;
+    if(!vistas) estado = 'virgen';
+    else if(dominio >= 0.7 && vivas <= Math.ceil(n * 0.1)) estado = 'dominado';
+    else if(intentos >= Math.min(10, n) && acierto < 0.6) estado = 'flojo';
+    else estado = 'progreso';
+    var jefe = jefesDB[t] || null;
+    var jefeDisponible = n >= 5 && cobertura >= 0.6 && acierto >= 0.7;
+    return { tema: t, n: n, vistas: vistas, intentos: intentos, aciertos: aciertos, vivas: vivas, cobertura: cobertura, acierto: acierto,
+             dominio: dominio, estado: estado, jefe: jefe, jefeGanado: !!(jefe && jefe.g), jefeDisponible: jefeDisponible };
+  }
+  var mapaTemas = [], mapaSeleccion = null;
+  function renderMapa(){
+    var carta = document.getElementById('mapa-carta');
+    mapaTemas = [];
+    var dominados = 0, jefes = 0, trazados = 0, total = 0;
+    var html = '';
+    gruposMapa().forEach(function(g){
+      if(!g.temas.length) return;
+      html += '<div class="mapa-region"><div class="mapa-region-cab"><h3>' + escapeHtml(g.nombre) + '</h3><i></i><small>' + escapeHtml(g.sub) + '</small></div><div class="mapa-grid">';
+      g.temas.forEach(function(t){
+        var e = estadoTema(t), idx = mapaTemas.push(t) - 1;
+        total++; if(e.vistas) trazados++; if(e.estado === 'dominado' || e.jefeGanado) dominados++; if(e.jefeGanado) jefes++;
+        var cls = (e.jefeGanado && e.estado !== 'dominado') ? 'est-dominado' : 'est-' + e.estado;
+        var pct = Math.round(e.dominio * 100);
+        html += '<button class="mapa-tile ' + cls + (mapaSeleccion === t ? ' sel' : '') + '" data-mapa-idx="' + idx + '" aria-label="' + escapeHtml(etiquetaCortaTema(t)) + ': ' + pct + '%">' +
+          (e.jefeGanado ? '<span class="mapa-corona" aria-hidden="true">👑</span>' : '') +
+          '<span class="mapa-anillo" style="--p:' + pct + '%"><span class="mapa-centro">' + (e.vistas ? pct : '·') + '</span></span>' +
+          '<span class="mapa-cap">' + escapeHtml(etiquetaCortaTema(t)) + '</span></button>';
+      });
+      html += '</div></div>';
+    });
+    html += '<div class="mapa-leyenda">' +
+      '<span style="--c:#3d4c6e">sin explorar</span><span style="--c:#3fc7b5">avanzando</span><span style="--c:#ff7f6e">flojo</span><span style="--c:#f1c15d">dominado</span><span style="--c:#f1c15d">👑 jefe derrotado</span></div>';
+    carta.innerHTML = html;
+    document.getElementById('mapa-resumen').innerHTML =
+      'Has explorado <b>' + trazados + '</b> de ' + total + ' temas, <b>' + dominados + '</b> dominados y <b>' + jefes + '</b> jefes derrotados. ' +
+      'El anillo de cada tema mezcla cuántas preguntas has visto y cuánto aciertas. Toca un tema para ver el detalle.';
+    Array.prototype.forEach.call(carta.querySelectorAll('[data-mapa-idx]'), function(b){
+      b.addEventListener('click', function(){ mapaSeleccion = mapaTemas[parseInt(this.dataset.mapaIdx, 10)]; renderMapa(); renderDetalleMapa(); });
+    });
+    renderDetalleMapa();
+  }
+  function renderDetalleMapa(){
+    var cont = document.getElementById('mapa-detalle');
+    if(!mapaSeleccion){ cont.innerHTML = ''; return; }
+    var e = estadoTema(mapaSeleccion);
+    var colores = { virgen: '#3d4c6e', progreso: '#3fc7b5', flojo: '#ff7f6e', dominado: '#f1c15d' };
+    var nec = Math.ceil(JEFE_PORCENTAJE * Math.min(JEFE_MAX_PREGUNTAS, e.n)), nj = Math.min(JEFE_MAX_PREGUNTAS, e.n);
+    var estadoTxt = { virgen: 'Aún sin explorar.', progreso: 'Vas avanzando.', flojo: 'Aquí fallas bastante: toca reforzarlo.', dominado: 'Tema dominado.' }[e.estado];
+    var html = '<div class="mapa-detalle" style="--c:' + (e.jefeGanado ? '#f1c15d' : colores[e.estado]) + '"><h4>' + escapeHtml(e.tema) + '</h4>' +
+      '<p>' + estadoTxt + ' Has visto <b>' + e.vistas + '</b> de ' + e.n + ' preguntas' + (e.intentos ? ', con un acierto del <b>' + Math.round(e.acierto * 100) + '%</b>' : '') +
+      (e.vivas ? ' y tienes <b>' + e.vivas + '</b> fallada' + (e.vivas > 1 ? 's' : '') + ' pendiente' + (e.vivas > 1 ? 's' : '') : '') + '.</p>';
+    if(e.jefeGanado) html += '<p>👑 Jefe derrotado. Mejor resultado: <b>' + e.jefe.m + '%</b>.</p>';
+    else if(e.jefeDisponible) html += '<p>👑 El jefe de este tema está listo: ' + nj + ' preguntas, las que más te cuestan. Para derrotarlo necesitas ' + nec + ' aciertos.</p>';
+    else html += '<p>👑 El jefe se desbloquea al ver el 60% de las preguntas con un 70% de acierto.</p>';
+    html += '<div class="acciones"><button class="btn btn-sm" id="mapa-practicar">Practicar este tema</button>';
+    if(e.jefeGanado) html += '<button class="btn btn-ghost btn-sm" id="mapa-jefe">👑 Revancha</button>';
+    else if(e.jefeDisponible) html += '<button class="btn btn-primary btn-sm" id="mapa-jefe">👑 Enfrentar al jefe</button>';
+    else html += '<button class="btn btn-ghost btn-sm" disabled>👑 Jefe bloqueado</button>';
+    html += '</div></div>';
+    cont.innerHTML = html;
+    document.getElementById('mapa-practicar').addEventListener('click', function(){ seleccionarSoloTema(mapaSeleccion); });
+    var bj = document.getElementById('mapa-jefe');
+    if(bj) bj.addEventListener('click', function(){ iniciarJefe(mapaSeleccion); });
+  }
+  function preguntasJefe(t){
+    var qsT = ALL_QUESTIONS.filter(function(q){ return q.tema === t; });
+    var N = Math.min(JEFE_MAX_PREGUNTAS, qsT.length);
+    function dificultad(q){
+      var f = (falladasDB[q.id] && falladasDB[q.id].failCount) || 0;
+      var s = statsDB[q.id];
+      var r = (s && s.intentos > 0) ? s.aciertos / s.intentos : 0.5; // sin ver: se supone dudosa
+      return { f: f, r: r };
+    }
+    var ord = barajar(qsT).sort(function(a, b){
+      var da = dificultad(a), db = dificultad(b);
+      if(db.f !== da.f) return db.f - da.f;
+      return da.r - db.r;
+    });
+    return { lista: barajar(ord.slice(0, N)), N: N, necesarias: Math.ceil(JEFE_PORCENTAJE * N) };
+  }
+  function iniciarJefe(t){
+    var c = preguntasJefe(t);
+    if(!c.lista.length) return;
+    jefePendiente = { tema: t, N: c.N, necesarias: c.necesarias };
+    iniciarQuizConPreguntas(c.lista);
+  }
+  function resolverJefe(jefe, correctas, total){
+    var pct = total ? Math.round(100 * correctas / total) : 0;
+    var gana = correctas >= jefe.necesarias;
+    var prev = jefesDB[jefe.tema] || { g: 0, m: 0, n: 0, ts: 0 };
+    var primera = gana && !prev.g;
+    jefesDB[jefe.tema] = { g: prev.g || (gana ? Date.now() : 0), m: Math.max(prev.m || 0, pct), n: (prev.n || 0) + 1, ts: Date.now() };
+    guardarJefes();
+    avisarCambioLocal();
+    var el = document.getElementById('resultado-jefe');
+    el.className = 'jefe-banner' + (gana ? '' : ' pierde');
+    el.innerHTML = gana
+      ? '<strong>👑 ¡Jefe derrotado!</strong>' + correctas + ' de ' + total + ' en «' + escapeHtml(etiquetaCortaTema(jefe.tema)) + '»' + (primera ? '. Tu corona ya está en el mapa.' : '. Revancha superada.')
+      : '<strong>El jefe resiste</strong>' + correctas + ' de ' + total + '. Necesitas ' + jefe.necesarias + ' para derrotarlo. Repasa las falladas de abajo y vuelve a intentarlo.';
+  }
+  document.getElementById('btn-abrir-mapa').addEventListener('click', function(){
+    renderMapa();
+    mostrarPantalla('mapa');
+  });
+  document.getElementById('btn-mapa-volver').addEventListener('click', function(){
+    mostrarPantalla('config');
+    actualizarResumenSeleccion();
+  });
+
+  // ---------- Bitácora semanal ----------
+  var bitacoraOffset = 0; // 0 = semana actual, -1 = la anterior...
+  var MESES_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  var DIAS_SEMANA_ES = ['lunes','martes','miércoles','jueves','viernes','sábado','domingo'];
+  var INICIALES_ES = ['L','M','X','J','V','S','D'];
+  function lunesDeSemana(fechaStr){
+    var p = fechaStr.split('-').map(Number), d = new Date(p[0], p[1] - 1, p[2]);
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    return fechaISO(d);
+  }
+  function diaMesEs(f){ var p = f.split('-').map(Number); return p[2] + ' de ' + MESES_ES[p[1] - 1]; }
+  function rangoSemanaEs(a, b){
+    var pa = a.split('-').map(Number), pb = b.split('-').map(Number);
+    if(pa[1] === pb[1]) return pa[2] + '–' + pb[2] + ' de ' + MESES_ES[pb[1] - 1];
+    return pa[2] + ' ' + MESES_ES[pa[1] - 1].slice(0, 3) + ' – ' + pb[2] + ' ' + MESES_ES[pb[1] - 1].slice(0, 3);
+  }
+  function totalGeneralPlan(){
+    return BLOQUES_GENERAL.filter(function(b){ return !b.pequeno; }).reduce(function(acc, b){ return acc + progresoBloque(b).total; }, 0);
+  }
+  function objetivoParaFecha(f, totalGeneral){
+    try {
+      var inicio = obtenerFechaInicioPlan();
+      var dias = diferenciaDias(inicio, f);
+      if(dias < 0) return null;
+      var total = totalGeneral || totalGeneralPlan();
+      if(!total) return null;
+      var ciclo = Math.floor(dias / CICLO_DIAS), diaEnCiclo = dias % CICLO_DIAS;
+      var inicioCiclo = sumarDias(inicio, ciclo * CICLO_DIAS);
+      var pesos = construirPesos(inicioCiclo, Math.max(DIAS_OBJETIVO_FASE1, diaEnCiclo + 3));
+      var suma = pesos.reduce(function(a, b){ return a + b; }, 0);
+      var obj = Math.round(total * pesos[diaEnCiclo] / suma);
+      return isFinite(obj) ? Math.max(1, obj) : null;
+    } catch(e){ return null; }
+  }
+  function datosSemana(lunes, hoy, totalGeneral){
+    var diario = cargarJSON(DIARIO_KEY, {}), ac = cargarJSON(DIARIO_ACIERTOS_KEY, {}), bl = cargarJSON(DIARIO_BLOQUE_KEY, {});
+    var dias = [], total = 0, activos = 0, cumplidos = 0, conObjetivo = 0, acc = { total: 0, aciertos: 0 }, mejor = { n: 0, i: -1 }, bloques = {};
+    for(var i = 0; i < 7; i++){
+      var f = sumarDias(lunes, i), futuro = f > hoy;
+      var t = futuro ? 0 : sumarValoresObjeto(diario[f]);
+      var obj = futuro ? null : objetivoParaFecha(f, totalGeneral);
+      if(t > 0) activos++;
+      if(obj && (f < hoy || t >= obj)){ conObjetivo++; if(t >= obj) cumplidos++; } // el día de hoy solo cuenta si ya lo has cumplido
+      total += t;
+      if(!futuro) acumularAcierto(acc, f, diario, ac);
+      if(t > mejor.n) mejor = { n: t, i: i };
+      if(bl[f]) Object.keys(bl[f]).forEach(function(b){ bloques[b] = (bloques[b] || 0) + sumarValoresObjeto(bl[f][b]); });
+      dias.push({ f: f, t: t, obj: obj, futuro: futuro, hoy: f === hoy });
+    }
+    var topB = null;
+    Object.keys(bloques).forEach(function(b){ if(!topB || bloques[b] > bloques[topB]) topB = b; });
+    return { dias: dias, total: total, activos: activos, cumplidos: cumplidos, conObjetivo: conObjetivo, acc: acc,
+             pct: acc.total > 0 ? Math.round(100 * acc.aciertos / acc.total) : null, mejor: mejor, topBloque: topB, topBloqueN: topB ? bloques[topB] : 0 };
+  }
+  function renderBitacoraSemana(){
+    var hoy = fechaISO(new Date());
+    var lunes = sumarDias(lunesDeSemana(hoy), bitacoraOffset * 7);
+    var domingo = sumarDias(lunes, 6);
+    var totalGeneral = totalGeneralPlan();
+    var s = datosSemana(lunes, hoy, totalGeneral);
+    var ant = datosSemana(sumarDias(lunes, -7), hoy, totalGeneral);
+    var enCurso = bitacoraOffset === 0;
+    var fmt = function(n){ return n.toLocaleString('es-ES'); };
+    var html = '<div class="bit-card" id="bitacora-semana"><div class="bit-cab"><span class="t">Bitácora · ' + rangoSemanaEs(lunes, domingo) + (enCurso ? ' · en curso' : '') + '</span>' +
+      '<span class="bit-nav"><button class="btn btn-ghost btn-sm" id="bitacora-prev" aria-label="Semana anterior">←</button><button class="btn btn-ghost btn-sm" id="bitacora-next" aria-label="Semana siguiente"' + (enCurso ? ' disabled' : '') + '>→</button></span></div>';
+    if(s.total === 0){
+      html += '<p class="bit-frase">' + (enCurso ? 'Esta semana aún no hay respuestas anotadas.' : 'Esta semana no anotaste ninguna respuesta.') + '</p></div>';
+      return html;
+    }
+    html += '<p class="bit-frase">' + (enCurso ? 'Llevas ' : 'Contestaste ') + '<b>' + fmt(s.total) + '</b> preguntas' +
+      (s.pct !== null ? ' y acertaste el <b>' + s.pct + '\u00a0%</b>' : '') + '.</p>';
+    if(s.pct !== null && ant.pct !== null){
+      var d = s.pct - ant.pct;
+      html += '<p class="bit-delta">' + (d > 0 ? '▲ ' + d + ' puntos más de acierto que la semana anterior (' + ant.pct + '\u00a0%).' : d < 0 ? '▼ ' + Math.abs(d) + ' puntos menos de acierto que la semana anterior (' + ant.pct + '\u00a0%).' : 'Mismo acierto que la semana anterior (' + ant.pct + '\u00a0%).') + '</p>';
+    } else { html += '<p class="bit-delta"></p>'; }
+    var maxV = 1; s.dias.forEach(function(x){ maxV = Math.max(maxV, x.t, x.obj || 0); });
+    html += '<div class="bit-mareas" role="img" aria-label="Preguntas por día de la semana">';
+    s.dias.forEach(function(x, i){
+      html += '<div class="bit-col' + (x.hoy ? ' hoy' : '') + '"><div class="bit-pista">' +
+        (x.obj ? '<span class="bit-obj" style="bottom:' + Math.round(100 * x.obj / maxV) + '%" title="Objetivo ' + x.obj + '"></span>' : '') +
+        '<span class="bit-barra' + (x.t ? '' : ' cero') + '" style="height:' + (x.t ? Math.max(3, Math.round(100 * x.t / maxV)) : 3) + '%"></span></div>' +
+        '<span class="bit-n">' + (x.futuro ? '' : x.t) + '</span><span class="bit-d">' + INICIALES_ES[i] + '</span></div>';
+    });
+    html += '</div><div class="bit-lineas">' +
+      '<div><span>Días con actividad</span><span>' + s.activos + ' de ' + (enCurso ? Math.min(7, s.dias.filter(function(x){ return !x.futuro; }).length) : 7) + '</span></div>' +
+      (s.conObjetivo ? '<div><span>Objetivo diario cumplido</span><span>' + s.cumplidos + ' de ' + s.conObjetivo + (s.conObjetivo === 1 ? ' día' : ' días') + '</span></div>' : '') +
+      (s.mejor.i >= 0 ? '<div><span>Mejor día</span><span>' + DIAS_SEMANA_ES[s.mejor.i] + ' (' + fmt(s.mejor.n) + ')</span></div>' : '') +
+      (s.topBloque ? '<div><span>Bloque más trabajado</span><span>' + escapeHtml(s.topBloque.replace(/\s*\(.*\)\s*$/, '')) + ' (' + fmt(s.topBloqueN) + ')</span></div>' : '') +
+      '</div><p class="bit-delta" style="margin-top:8px;">La línea dorada de cada barra marca el objetivo de ese día.</p></div>';
+    return html;
+  }
+
   // ---------- Notas personales ----------
   function pintarNotaQuiz(){
     var q = quizPreguntas[quizIndice];
@@ -2743,7 +3471,7 @@
   actualizarResumenSeleccion();
   renderAccesosRapidos();
   comprobarSesionGuardada();
-  var APP_VERSION = '2026-10-10-3';
+  var APP_VERSION = '2026-10-12-6';
   document.getElementById('footer-total-info').textContent = ALL_QUESTIONS.length + ' preguntas en el banco total · versión ' + APP_VERSION;
 
   // Aviso de versión nueva: como el navegador guarda copias antiguas de la página, una vez por hora
@@ -2859,6 +3587,9 @@
       agenda: estado.agenda,
       diario: estado.diario,
       diarioBloque: estado.diarioBloque,
+      diarioAciertos: estado.diarioAciertos,
+      cierresCiclo: estado.cierresCiclo,
+      jefes: estado.jefes,
       sesiones: estado.sesiones,
       planInicio: estado.planInicio,
       actualizadoEn: Date.now()
@@ -2920,6 +3651,9 @@
               agenda: data.agenda || {},
               diario: data.diario || {},
               diarioBloque: data.diarioBloque || {},
+              diarioAciertos: data.diarioAciertos || {},
+              cierresCiclo: data.cierresCiclo || null,
+              jefes: data.jefes || null,
               sesiones: data.sesiones || {},
               planInicio: data.planInicio || null
             });
