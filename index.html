@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="app-version" content="2026-10-13-4">
+<meta name="app-version" content="2026-10-13-5">
 <title>Test Oposición · Técnico de Comunicación A2 · Ayto. Cartagena</title>
 <style>
   .plan-ritmo-card{background:linear-gradient(135deg, rgba(59,130,246,0.18), rgba(59,130,246,0.05));border:1px solid rgba(59,130,246,0.35);border-radius:14px;padding:16px;}
@@ -442,6 +442,7 @@
   .est-virgen .mapa-centro{background:transparent;color:#5b6b8e;}
   .mapa-cap{font-size:.7rem;line-height:1.2;color:var(--text-dim);text-align:center;max-width:84px;}
   .mapa-corona{position:absolute;top:-3px;right:10px;font-size:1.05rem;filter:drop-shadow(0 1px 2px rgba(0,0,0,.7));}
+  .mapa-corona.gris{font-size:.85rem;filter:grayscale(1) brightness(1.1) drop-shadow(0 1px 2px rgba(0,0,0,.7));opacity:.75;}
   .mapa-leyenda{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:14px;font-size:.74rem;color:var(--text-dim);}
   .mapa-leyenda span::before{content:'';display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px;background:var(--c);}
   .mapa-detalle{margin-top:16px;border-radius:12px;padding:14px 16px;background:rgba(17,26,44,.92);border:1px solid var(--border);border-left:3px solid var(--c,#3fc7b5);}
@@ -3075,22 +3076,23 @@
 
   // ---------- Mapa del temario + Jefes de tema ----------
   var JEFES_KEY = 'oposicion_cartagena_jefes_v1';
-  var jefesDB = cargarJSON(JEFES_KEY, {}); // { tema: { g: fecha(ms) en que lo derrotaste (0 = aún no), m: mejor %, n: intentos, ts } }
+  var jefesDB = cargarJSON(JEFES_KEY, {}); // { tema: { g: fecha(ms) en que lo derrotaste (0 = aún no), m: mejor %, n: intentos, ts, f: fecha(ms) del último fallo } }
   function guardarJefes(){ guardarJSON(JEFES_KEY, jefesDB); }
   function fusionarJefes(inc){
     if(!inc || typeof inc !== 'object') return false;
     var cambio = false;
     Object.keys(inc).forEach(function(t){
       var i = inc[t]; if(!i || typeof i !== 'object') return;
-      var l = jefesDB[t] || { g: 0, m: 0, n: 0, ts: 0 };
-      var nuevo = { g: Math.max(l.g || 0, i.g || 0), m: Math.max(l.m || 0, i.m || 0), n: Math.max(l.n || 0, i.n || 0), ts: Math.max(l.ts || 0, i.ts || 0) };
-      if(!jefesDB[t] || nuevo.g !== l.g || nuevo.m !== l.m || nuevo.n !== l.n || nuevo.ts !== l.ts){ jefesDB[t] = nuevo; cambio = true; }
+      var l = jefesDB[t] || { g: 0, m: 0, n: 0, ts: 0, f: 0 };
+      var nuevo = { g: Math.max(l.g || 0, i.g || 0), m: Math.max(l.m || 0, i.m || 0), n: Math.max(l.n || 0, i.n || 0), ts: Math.max(l.ts || 0, i.ts || 0), f: Math.max(l.f || 0, i.f || 0) };
+      if(!jefesDB[t] || nuevo.g !== l.g || nuevo.m !== l.m || nuevo.n !== l.n || nuevo.ts !== l.ts || (nuevo.f || 0) !== (l.f || 0)){ jefesDB[t] = nuevo; cambio = true; }
     });
     if(cambio) guardarJefes();
     return cambio;
   }
 
-  var JEFE_MAX_PREGUNTAS = 20, JEFE_PORCENTAJE = 0.8;
+  var JEFE_MAX_PREGUNTAS = 20, JEFE_PORCENTAJE = 1; // el jefe exige el 100 %
+  var JEFE_ESPERA_MS = 7 * 24 * 60 * 60 * 1000; // tras un fallo, una semana sin poder reintentarlo
   var NUMEROS_ROMANOS = { I:1, II:2, III:3, IV:4, V:5, VI:6, VII:7, VIII:8, IX:9, X:10 };
   function etiquetaCortaTema(t){
     var m;
@@ -3171,9 +3173,13 @@
     else if(dominio >= 0.4) estado = 'ambar';
     else estado = 'rojo';
     var jefe = jefesDB[t] || null;
-    var jefeDisponible = n >= 5 && cobertura >= 0.6 && acierto >= 0.7;
+    var jefeGanado = !!(jefe && jefe.g && (jefe.m || 0) >= 100); // las victorias con menos del 100 % (regla antigua) ya no cuentan
+    var hasta = (!jefeGanado && jefe && jefe.f) ? jefe.f + JEFE_ESPERA_MS : 0;
+    var jefeEnEspera = hasta > Date.now();
+    var jefeDesbloqueado = n >= 5 && cobertura >= 0.6 && acierto >= 0.7;
+    var jefeDisponible = jefeDesbloqueado && !jefeEnEspera;
     return { tema: t, n: n, vistas: vistas, intentos: intentos, aciertos: aciertos, vivas: vivas, cobertura: cobertura, acierto: acierto,
-             dominio: dominio, estado: estado, jefe: jefe, jefeGanado: !!(jefe && jefe.g), jefeDisponible: jefeDisponible };
+             dominio: dominio, estado: estado, jefe: jefe, jefeGanado: jefeGanado, jefeDisponible: jefeDisponible, jefeEnEspera: jefeEnEspera && jefeDesbloqueado, jefeHasta: hasta };
   }
   var ETIQUETA_NIVEL = { virgen: 'sin explorar', rojo: 'nivel rojo', ambar: 'nivel ámbar', verde: 'nivel verde', oro: 'nivel dorado' };
   var COLOR_NIVEL = { virgen: '#3d4c6e', rojo: '#ff5a5f', ambar: '#ffa726', verde: '#3ecf8e', oro: '#ffd84d' };
@@ -3191,8 +3197,8 @@
         total++; if(e.vistas) trazados++; if(e.estado === 'verde' || e.estado === 'oro') dominados++; if(e.jefeGanado) jefes++;
         var cls = 'est-' + e.estado;
         var pct = Math.round(e.dominio * 100);
-        html += '<button class="mapa-tile ' + cls + (mapaSeleccion === t ? ' sel' : '') + '" data-mapa-idx="' + idx + '" aria-label="' + escapeHtml(etiquetaCortaTema(t)) + ': ' + pct + '%, ' + ETIQUETA_NIVEL[e.estado] + (e.jefeGanado ? ', jefe derrotado' : '') + '">' +
-          (e.jefeGanado ? '<span class="mapa-corona" aria-hidden="true">👑</span>' : '') +
+        html += '<button class="mapa-tile ' + cls + (mapaSeleccion === t ? ' sel' : '') + '" data-mapa-idx="' + idx + '" aria-label="' + escapeHtml(etiquetaCortaTema(t)) + ': ' + pct + '%, ' + ETIQUETA_NIVEL[e.estado] + (e.jefeGanado ? ', jefe derrotado' : (e.jefeDisponible ? ', jefe disponible' : '')) + '">' +
+          (e.jefeGanado ? '<span class="mapa-corona" aria-hidden="true">👑</span>' : (e.jefeDisponible ? '<span class="mapa-corona gris" aria-hidden="true">👑</span>' : '')) +
           '<span class="mapa-anillo" style="--p:' + pct + '%"><span class="mapa-centro">' + (e.vistas ? pct : '·') + '</span></span>' +
           '<span class="mapa-cap">' + escapeHtml(etiquetaCortaTema(t)) + '</span></button>';
       });
@@ -3220,11 +3226,13 @@
       '<p>' + estadoTxt + ' Has visto <b>' + e.vistas + '</b> de ' + e.n + ' preguntas' + (e.intentos ? ', con un acierto del <b>' + Math.round(e.acierto * 100) + '%</b>' : '') +
       (e.vivas ? ' y tienes <b>' + e.vivas + '</b> fallada' + (e.vivas > 1 ? 's' : '') + ' pendiente' + (e.vivas > 1 ? 's' : '') : '') + '.</p>';
     if(e.jefeGanado) html += '<p>👑 Jefe derrotado. Mejor resultado: <b>' + e.jefe.m + '%</b>.</p>';
-    else if(e.jefeDisponible) html += '<p>👑 El jefe de este tema está listo: ' + nj + ' preguntas, las que más te cuestan. Para derrotarlo necesitas ' + nec + ' aciertos.</p>';
+    else if(e.jefeEnEspera) html += '<p>👑 El jefe te venció. Podrás volver a intentarlo el <b>' + new Date(e.jefeHasta).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }) + '</b>. Hasta entonces, a repasar.</p>';
+    else if(e.jefeDisponible) html += '<p>👑 El jefe de este tema está listo: ' + nj + ' preguntas, las que más te cuestan. Para derrotarlo hay que acertarlas <b>todas</b>. Si fallas, esperas una semana para reintentarlo.</p>';
     else html += '<p>👑 El jefe se desbloquea al ver el 60% de las preguntas con un 70% de acierto.</p>';
     html += '<div class="acciones"><button class="btn btn-sm" id="mapa-practicar">Practicar este tema</button>';
     if(e.jefeGanado) html += '<button class="btn btn-ghost btn-sm" id="mapa-jefe">👑 Revancha</button>';
     else if(e.jefeDisponible) html += '<button class="btn btn-primary btn-sm" id="mapa-jefe">👑 Enfrentar al jefe</button>';
+    else if(e.jefeEnEspera) html += '<button class="btn btn-ghost btn-sm" disabled>👑 En espera</button>';
     else html += '<button class="btn btn-ghost btn-sm" disabled>👑 Jefe bloqueado</button>';
     html += '</div></div>';
     cont.innerHTML = html;
@@ -3249,6 +3257,8 @@
     return { lista: barajar(ord.slice(0, N)), N: N, necesarias: Math.ceil(JEFE_PORCENTAJE * N) };
   }
   function iniciarJefe(t){
+    var ee = estadoTema(t);
+    if(!ee.jefeGanado && !ee.jefeDisponible) return;
     var c = preguntasJefe(t);
     if(!c.lista.length) return;
     jefePendiente = { tema: t, N: c.N, necesarias: c.necesarias };
@@ -3256,17 +3266,18 @@
   }
   function resolverJefe(jefe, correctas, total){
     var pct = total ? Math.round(100 * correctas / total) : 0;
-    var gana = correctas >= jefe.necesarias;
-    var prev = jefesDB[jefe.tema] || { g: 0, m: 0, n: 0, ts: 0 };
-    var primera = gana && !prev.g;
-    jefesDB[jefe.tema] = { g: prev.g || (gana ? Date.now() : 0), m: Math.max(prev.m || 0, pct), n: (prev.n || 0) + 1, ts: Date.now() };
+    var gana = total > 0 && correctas >= total; // 100 %
+    var prev = jefesDB[jefe.tema] || { g: 0, m: 0, n: 0, ts: 0, f: 0 };
+    var yaGanado = !!(prev.g && (prev.m || 0) >= 100);
+    var primera = gana && !yaGanado;
+    jefesDB[jefe.tema] = { g: gana ? (yaGanado ? prev.g : Date.now()) : (yaGanado ? prev.g : 0), m: Math.max(prev.m || 0, pct), n: (prev.n || 0) + 1, ts: Date.now(), f: (!gana && !yaGanado) ? Date.now() : (prev.f || 0) };
     guardarJefes();
     avisarCambioLocal();
     var el = document.getElementById('resultado-jefe');
     el.className = 'jefe-banner' + (gana ? '' : ' pierde');
     el.innerHTML = gana
       ? '<strong>👑 ¡Jefe derrotado!</strong>' + correctas + ' de ' + total + ' en «' + escapeHtml(etiquetaCortaTema(jefe.tema)) + '»' + (primera ? '. Tu corona ya está en el mapa.' : '. Revancha superada.')
-      : '<strong>El jefe resiste</strong>' + correctas + ' de ' + total + '. Necesitas ' + jefe.necesarias + ' para derrotarlo. Repasa las falladas de abajo y vuelve a intentarlo.';
+      : '<strong>El jefe resiste</strong>' + correctas + ' de ' + total + '. Hay que acertarlas todas. ' + (yaGanado ? 'Tu corona sigue en el mapa.' : 'Podrás volver a intentarlo dentro de una semana: repasa las falladas de abajo.');
   }
   document.getElementById('btn-abrir-mapa').addEventListener('click', function(){
     renderMapa();
@@ -3491,7 +3502,7 @@
   actualizarResumenSeleccion();
   renderAccesosRapidos();
   comprobarSesionGuardada();
-  var APP_VERSION = '2026-10-13-4';
+  var APP_VERSION = '2026-10-13-5';
   document.getElementById('footer-total-info').textContent = ALL_QUESTIONS.length + ' preguntas en el banco total · versión ' + APP_VERSION;
 
   // Aviso de versión nueva: como el navegador guarda copias antiguas de la página, una vez por hora
