@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="app-version" content="2026-10-13-5">
+<meta name="app-version" content="2026-10-13-6">
 <title>Test Oposición · Técnico de Comunicación A2 · Ayto. Cartagena</title>
 <style>
   .plan-ritmo-card{background:linear-gradient(135deg, rgba(59,130,246,0.18), rgba(59,130,246,0.05));border:1px solid rgba(59,130,246,0.35);border-radius:14px;padding:16px;}
@@ -3176,7 +3176,7 @@
     var jefeGanado = !!(jefe && jefe.g && (jefe.m || 0) >= 100); // las victorias con menos del 100 % (regla antigua) ya no cuentan
     var hasta = (!jefeGanado && jefe && jefe.f) ? jefe.f + JEFE_ESPERA_MS : 0;
     var jefeEnEspera = hasta > Date.now();
-    var jefeDesbloqueado = n >= 5 && cobertura >= 0.6 && acierto >= 0.7;
+    var jefeDesbloqueado = n >= 5 && cobertura >= 0.6 && acierto >= 0.9;
     var jefeDisponible = jefeDesbloqueado && !jefeEnEspera;
     return { tema: t, n: n, vistas: vistas, intentos: intentos, aciertos: aciertos, vivas: vivas, cobertura: cobertura, acierto: acierto,
              dominio: dominio, estado: estado, jefe: jefe, jefeGanado: jefeGanado, jefeDisponible: jefeDisponible, jefeEnEspera: jefeEnEspera && jefeDesbloqueado, jefeHasta: hasta };
@@ -3228,7 +3228,7 @@
     if(e.jefeGanado) html += '<p>👑 Jefe derrotado. Mejor resultado: <b>' + e.jefe.m + '%</b>.</p>';
     else if(e.jefeEnEspera) html += '<p>👑 El jefe te venció. Podrás volver a intentarlo el <b>' + new Date(e.jefeHasta).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }) + '</b>. Hasta entonces, a repasar.</p>';
     else if(e.jefeDisponible) html += '<p>👑 El jefe de este tema está listo: ' + nj + ' preguntas, las que más te cuestan. Para derrotarlo hay que acertarlas <b>todas</b>. Si fallas, esperas una semana para reintentarlo.</p>';
-    else html += '<p>👑 El jefe se desbloquea al ver el 60% de las preguntas con un 70% de acierto.</p>';
+    else html += '<p>👑 El jefe se desbloquea al ver el 60% de las preguntas con un 90% de acierto o más.</p>';
     html += '<div class="acciones"><button class="btn btn-sm" id="mapa-practicar">Practicar este tema</button>';
     if(e.jefeGanado) html += '<button class="btn btn-ghost btn-sm" id="mapa-jefe">👑 Revancha</button>';
     else if(e.jefeDisponible) html += '<button class="btn btn-primary btn-sm" id="mapa-jefe">👑 Enfrentar al jefe</button>';
@@ -3502,7 +3502,7 @@
   actualizarResumenSeleccion();
   renderAccesosRapidos();
   comprobarSesionGuardada();
-  var APP_VERSION = '2026-10-13-5';
+  var APP_VERSION = '2026-10-13-6';
   document.getElementById('footer-total-info').textContent = ALL_QUESTIONS.length + ' preguntas en el banco total · versión ' + APP_VERSION;
 
   // Aviso de versión nueva: como el navegador guarda copias antiguas de la página, una vez por hora
