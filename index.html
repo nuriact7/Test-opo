@@ -1128,8 +1128,8 @@
   }
 
   // ---------- Mi sesión de hoy ----------
-  // Un solo botón que compone el test del día: ~40 % falladas vivas, ~20 % de temas flojos y el resto
-  // (~40 %, más lo que falte de las otras dos partes) de las menos practicadas. Se mezcla todo.
+  // Un solo botón que compone el test del día: ~25 % falladas vivas (con descanso de 3 días), ~20 % de temas flojos
+  // (los 5 peores, por turnos) y el resto (~55 %, más lo que falte de las otras dos partes) de las menos practicadas.
   var SESION_HOY_MIN = 20, SESION_HOY_MAX = 100;
   var sesionHoyActiva = false, sesionHoyPendiente = false;
   var jefeActivo = null, jefePendiente = null; // jefe de tema en curso: {tema, N, necesarias}
@@ -1145,7 +1145,7 @@
     if(!isFinite(N)) N = 50;
     N = Math.max(SESION_HOY_MIN, Math.min(SESION_HOY_MAX, N));
     N = Math.min(N, sel.length);
-    var nF = Math.round(0.4 * N), nT = Math.round(0.2 * N);
+    var nF = Math.round(0.25 * N), nT = Math.round(0.2 * N);
     var usadas = {}, lista = [];
     function tomar(candidatas, max){
       var tomadas = 0;
@@ -1157,15 +1157,35 @@
     }
     // 1) falladas vivas: primero las que más has fallado y, a igualdad, las más antiguas
     var vivas = {}; idsFalladas().forEach(function(id){ vivas[id] = true; });
-    var fall = sel.filter(function(q){ return vivas[q.id]; }).sort(function(a, b){
+    // Descanso: una fallada solo vuelve a la sesión si han pasado 3 días desde la última vez que la respondiste
+    // (1 día si solo la has fallado una vez). Así no se repiten las mismas todos los días.
+    var AHORA = Date.now(), DIA_MS = 86400000;
+    var fall = sel.filter(function(q){
+      if(!vivas[q.id]) return false;
+      var f = falladasDB[q.id], espera = ((f.failCount || 0) <= 1) ? 1 : 3;
+      return (AHORA - (f.ts || 0)) >= espera * DIA_MS;
+    }).sort(function(a, b){
       var fa = falladasDB[a.id], fb = falladasDB[b.id];
       if((fb.failCount || 0) !== (fa.failCount || 0)) return (fb.failCount || 0) - (fa.failCount || 0);
       return (fa.ts || 0) - (fb.ts || 0);
     });
     var cF = tomar(fall, nF);
     // 2) temas flojos (menos practicadas dentro de ellos)
-    var flojos = {}; calcularTemasFlojos().slice(0, 3).forEach(function(f){ flojos[f.tema] = true; }); // los 3 más flojos
-    var cT = tomar(ordenarMenosPracticadas(sel.filter(function(q){ return flojos[q.tema]; })), nT);
+    // Los 5 temas más flojos, repartidos por turnos (una de cada tema) y rotando el tema de arranque cada día.
+    var flojos = {}; calcularTemasFlojos().slice(0, 5).forEach(function(f){ flojos[f.tema] = true; });
+    var grupos = Object.keys(flojos).map(function(tm){
+      return ordenarMenosPracticadas(sel.filter(function(q){ return q.tema === tm; }));
+    });
+    if(grupos.length){
+      var rot = Math.floor(Date.now() / 86400000) % grupos.length;
+      grupos = grupos.slice(rot).concat(grupos.slice(0, rot));
+    }
+    var turnos = [];
+    for(var ix = 0, hay = true; hay && ix < 200; ix++){
+      hay = false;
+      grupos.forEach(function(g){ if(ix < g.length){ turnos.push(g[ix]); hay = true; } });
+    }
+    var cT = tomar(turnos, nT);
     // 3) el resto, menos practicadas
     var cP = tomar(ordenarMenosPracticadas(sel), N);
     return { lista: barajar(lista), n: lista.length, falladas: cF, flojos: cT, poco: cP, objetivo: objetivo, hechas: hechas };
